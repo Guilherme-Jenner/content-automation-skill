@@ -1,0 +1,23 @@
+{
+  "type": "object",
+  "required": ["video", "largura", "altura", "fps", "palavras", "estilo"],
+  "properties": {
+    "video": {"type": "string"},
+    "largura": {"type": "integer", "exclusiveMinimum": 0},
+    "altura": {"type": "integer", "exclusiveMinimum": 0},
+    "fps": {"type": "number", "exclusiveMinimum": 0},
+    "estilo": {"type": "string"},
+    "palavras": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["texto", "inicio_s", "fim_s"],
+        "properties": {
+          "texto": {"type": "string"},
+          "inicio_s": {"type": "number", "minimum": 0},
+          "fim_s": {"type": "number", "exclusiveMinimum": 0}
+        }
+      }
+    }
+  }
+}
