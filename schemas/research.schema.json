@@ -1,0 +1,24 @@
+{
+  "type": "object",
+  "required": ["proposta", "plataforma", "data_pesquisa", "achados"],
+  "properties": {
+    "proposta": {"type": "string"},
+    "plataforma": {"type": "string"},
+    "data_pesquisa": {"type": "string"},
+    "achados": {
+      "type": "array", "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["afirmacao", "tipo", "aplicacao"],
+        "properties": {
+          "afirmacao": {"type": "string"},
+          "tipo": {"type": "string", "enum": ["fato", "hipotese"]},
+          "fonte_url": {"type": "string"},
+          "fonte_titulo": {"type": "string"},
+          "data_acesso": {"type": "string"},
+          "aplicacao": {"type": "string"}
+        }
+      }
+    }
+  }
+}

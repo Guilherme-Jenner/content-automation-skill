@@ -13,11 +13,15 @@ Pergunte, uma de cada vez, só o que ainda não foi dito:
 2. Duração-alvo em segundos (padrão: 30).
 3. **Modo**: `gerado` (clipes criados por IA) ou `gravado` (o usuário grava). Se o pedido já indicar o modo, deduza e confirme em uma frase.
 
-## 2. Hook e roteiro
+## 2. Pesquisa antes do hook
+Antes de propor qualquer hook ou roteiro, use a skill `research-trends` para gerar e validar o `research.json` dessa proposta (fontes reais, `python3 scripts/check_research.py research.json`). Sem `research.json` válido, não proponha roteiro.
+
+## 3. Hook e roteiro
+- O objetivo é **atrair e prender a atenção**: cada escolha (hook, estrutura, duração, chamada para ação) deve citar o achado da pesquisa que a justifica; o que for palpite, diga que é hipótese.
 - Escreva 3 opções de hook (primeiros 3 segundos) e peça para o usuário escolher.
 - Escreva o roteiro com início (hook), problema, solução (Clo App) e chamada para ação.
 
-## 3. Saída estruturada
+## 4. Saída estruturada
 Salve o resultado em JSON e valide **antes de mostrar como pronto**:
 
 ```bash
