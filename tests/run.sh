@@ -4,6 +4,7 @@
 set -u
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 export ROOT
+export PYTHONUTF8=1
 pattern="${1:-}"
 total=0; failed=0
 

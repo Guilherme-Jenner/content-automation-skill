@@ -23,3 +23,17 @@ assert_near() { # esperado atual tolerância mensagem
     _fail "${4:-assert_near}: esperado $1 ±$3, obtido $2"
   fi
 }
+
+# Diretório de fixtures em cache (gerado uma vez por checkout; fica fora do git).
+fixtures_dir() {
+  local d="$ROOT/.superpowers/fixtures"
+  if [ ! -f "$d/.done" ]; then
+    bash "$ROOT/tests/fixtures/make.sh" "$d" >/dev/null 2>&1 && : > "$d/.done"
+  fi
+  printf '%s\n' "$d"
+}
+
+# Lê uma expressão Python sobre o JSON: json_get arquivo "d['cortes'][0]['inicio_s']"
+json_get() {
+  python3 -c "import json,sys; d=json.load(open(sys.argv[1], encoding='utf-8')); print($2)" "$1"
+}
