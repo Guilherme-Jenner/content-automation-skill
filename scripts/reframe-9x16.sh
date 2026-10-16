@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Reenquadra o vídeo para 1080x1920 (9:16) sem esticar a imagem.
-# Uso: reframe-9x16.sh <video> <saida.mp4> [--mode blur|crop]
+# Uso: reframe-9x16.sh <video> <saida.mp4> [--mode blur|crop] [--force]
 #   blur (padrão): vídeo inteiro centralizado sobre fundo desfocado
 #   crop: preenche o quadro e corta as sobras
 # A rotação gravada pelo celular (metadado) é aplicada automaticamente pelo ffmpeg.
@@ -9,8 +9,11 @@ here="$(cd "${BASH_SOURCE[0]%/*}" && pwd)"
 # shellcheck source=lib/common.sh
 . "$here/lib/common.sh"
 
-[ $# -ge 2 ] || die "uso: reframe-9x16.sh <video> <saida.mp4> [--mode blur|crop]"
-video="$1"; out="$2"; mode=blur
+force=0; args=()
+for a in "$@"; do if [ "$a" = "--force" ]; then force=1; else args+=("$a"); fi; done
+set -- ${args[@]+"${args[@]}"}
+[ $# -ge 2 ] || die "uso: reframe-9x16.sh <video> <saida.mp4> [--mode blur|crop] [--force]"
+video="$(abspath "$1")"; out="$(abspath "$2")"; mode=blur
 if [ "${3:-}" = "--mode" ]; then mode="${4:?}"; fi
 case "$mode" in
   blur) filter="[0:v]split[a][b];[a]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,boxblur=20:5[bg];[b]scale=1080:1920:force_original_aspect_ratio=decrease[fg];[bg][fg]overlay=(W-w)/2:(H-h)/2,setsar=1[v]" ;;
@@ -21,6 +24,7 @@ esac
 need_cmd ffmpeg "brew install ffmpeg"
 [ -f "$video" ] || die "arquivo não encontrado: $video"
 probe_duration "$video" >/dev/null
+refuse_existing "$out" "$force"
 
 tmp="$(dirname "$out")/.$(basename "$out").partial.mp4"
 trap 'rm -f "$tmp"' EXIT

@@ -57,6 +57,25 @@ Roteiro **e** edição criativa devem buscar prender a atenção de quem assiste
 - Edição: a skill monta um **brief de edição** (ideia e proposta do vídeo → ritmo, cortes, legendas, zoom, trilha) amarrado à pesquisa; as propostas criativas continuam passando por aprovação humana.
 - Limite assumido: pesquisa web traz guias, estudos e artigos, não métricas privadas. Quando houver acesso (ex.: Metricool), os dados do **próprio perfil** da CLO entram como fonte mais forte.
 
+## Editor escolhido e várias variantes por bruto (adendo de 2026-10-16, rascunho)
+**Perguntas no início da edição:** (1) qual editor: `local` (ffmpeg, nossa proposta, custo zero) ou `katana` (Higgsfield, consome crédito); (2) quantas variantes finais, de 1 a **5** (limite vale para os dois editores).
+
+**Um bruto, N finais.** O vídeo bruto (gerado ou gravado) é matéria-prima. Cada variante é de um destes tipos:
+- `trecho_diferente`: mostra outra parte do bruto;
+- `mesmo_trecho_edicao_diferente`: mesmo trecho, com edição diferente (cortes, ritmo, ordem, legenda, zoom).
+Por padrão **cada variante tem um gancho (hook) distinto**. Se não houver gancho bom o bastante para a quantidade pedida, a skill pode **repetir um gancho**, dizendo isso claramente, e varia o restante.
+
+**Contrato:** `variants-plan.json` = `{bruto, editor, quantidade (1–5), variantes:[{id, tipo, trechos, gancho, ritmo, legenda_estilo, aprovada}]}`. Cada variante é aprovada separadamente (mesma regra de aprovação humana). Saída: `final-1.mp4 … final-N.mp4` + SRT de cada uma.
+
+**Teto de gastos (vale para qualquer coisa que custe crédito):**
+- A skill lê o saldo (`balance`), pergunta o teto, **cota** cada variante antes de rodar (as gerações do Higgsfield aceitam `get_cost: true`, que não cria job nem cobra), mostra o **custo total das N variantes** e só começa com confirmação. Acumula o gasto e para no teto.
+- Fato verificado: o workflow do Katana é **autônomo e não pede confirmação de crédito**; ele tem o próprio limite interno, que fica dentro de qualquer teto do usuário. Logo a trava é **nossa, antes de chamar**: passar o teto no pedido e conferir o saldo antes/depois (e `transactions`).
+- O teto é único para a sessão (geração + edição no Katana). O editor `local` custa zero e não consome teto.
+
+**Editor como porta:** `local` real, `katana` real (adaptador) e `katana` falso (testes, custo fictício). O adaptador real só entra após validar com conta real.
+
+**O que o Katana faz (lido das instruções do Higgsfield):** edita material enviado ou refaz (remix) um vídeo de referência; processa tudo no sandbox da Higgsfield (envio por `media_upload`); não é um "multiplicador" de variantes. Para várias versões de um mesmo vídeo o Higgsfield tem os workflows separados `ad-multiplier` (4–30 s) e `video-montage`; falta avaliar qual encaixa melhor. Também fica em aberto como baixar o resultado de forma automatizada.
+
 ## Edição do gravado (etapa de maior risco)
 1. Validar entrada (`ffprobe`). 2. Transcrever. 3. Detectar silêncios. 4. Skill propõe **plano de cortes** (arquivo JSON); humano aprova. 5. Aplicar cortes (recusa sem plano aprovado). 6. Legenda SRT. 7. Normalizar áudio (~-14 LUFS). 8. 9:16 (1080×1920, sem esticar).
 

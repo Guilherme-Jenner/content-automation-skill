@@ -14,7 +14,7 @@ Pergunte, uma de cada vez, só o que ainda não foi dito:
 3. **Modo**: `gerado` (clipes criados por IA) ou `gravado` (o usuário grava). Se o pedido já indicar o modo, deduza e confirme em uma frase.
 
 ## 2. Pesquisa antes do hook
-Antes de propor qualquer hook ou roteiro, use a skill `research-trends` para gerar e validar o `research.json` dessa proposta (fontes reais, `python3 scripts/check_research.py research.json`). Sem `research.json` válido, não proponha roteiro.
+Antes de propor qualquer hook ou roteiro, use a skill `research-trends` para gerar e validar o `research.json` dessa proposta (fontes reais, `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/check_research.py" research.json`). Sem `research.json` válido, não proponha roteiro.
 
 ## 3. Hook e roteiro
 - O objetivo é **atrair e prender a atenção**: cada escolha (hook, estrutura, duração, chamada para ação) deve citar o achado da pesquisa que a justifica; o que for palpite, diga que é hipótese.
@@ -25,9 +25,9 @@ Antes de propor qualquer hook ou roteiro, use a skill `research-trends` para ger
 Salve o resultado em JSON e valide **antes de mostrar como pronto**:
 
 ```bash
-python3 scripts/validate_json.py schemas/storyboard.schema.json arquivo.json   # modo gerado
-python3 scripts/validate_json.py schemas/shot-list.schema.json arquivo.json    # modo gravado
-python3 scripts/check_durations.py arquivo.json                                # soma bate com o alvo
+python3 "${CLAUDE_PLUGIN_ROOT}/scripts/validate_json.py" "${CLAUDE_PLUGIN_ROOT}/schemas/storyboard.schema.json" arquivo.json   # modo gerado
+python3 "${CLAUDE_PLUGIN_ROOT}/scripts/validate_json.py" "${CLAUDE_PLUGIN_ROOT}/schemas/shot-list.schema.json" arquivo.json    # modo gravado
+python3 "${CLAUDE_PLUGIN_ROOT}/scripts/check_durations.py" arquivo.json                                # soma bate com o alvo
 ```
 
 ### Modo gerado

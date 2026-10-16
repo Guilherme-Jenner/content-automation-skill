@@ -24,6 +24,9 @@ fi
 
 duration="$(probe_duration "$video")"
 require_audio "$video"
+plan_duration="$(python3 -c "import json,sys; print(json.load(open(sys.argv[1], encoding='utf-8'))['duracao_s'])" "$plan")"
+python3 -c "import sys; sys.exit(0 if abs(float(sys.argv[1])-float(sys.argv[2])) <= 0.1 else 1)" "$plan_duration" "$duration" \
+  || die "a duração do plano (${plan_duration}s) não bate com a do vídeo (${duration}s); este plano foi feito para outro vídeo?"
 
 # Trechos a manter = complemento dos cortes.
 keep="$(python3 - "$plan" "$duration" <<'PY'
@@ -31,14 +34,20 @@ import json, sys
 plano = json.load(open(sys.argv[1], encoding="utf-8"))
 dur = float(sys.argv[2])
 pos = 0.0
+trechos = []
 for c in sorted(plano["cortes"], key=lambda c: c["inicio_s"]):
-    if c["inicio_s"] - pos > 0.01:
-        print(f"{pos:.3f} {c['inicio_s']:.3f}")
+    if c["inicio_s"] - pos > 0.05:
+        trechos.append((pos, c["inicio_s"]))
     pos = max(pos, c["fim_s"])
-if dur - pos > 0.01:
-    print(f"{pos:.3f} {dur:.3f}")
+if dur - pos > 0.05:
+    trechos.append((pos, dur))
+if sum(b - a for a, b in trechos) < 1.0:
+    print("o resultado ficaria com menos de 1 s depois dos cortes", file=sys.stderr)
+    sys.exit(4)
+for a, b in trechos:
+    print(f"{a:.3f} {b:.3f}")
 PY
-)"
+)" || exit 1
 [ -n "$keep" ] || die "os cortes removem o vídeo inteiro"
 
 filter=""; labels=""; n=0

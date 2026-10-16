@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Transcreve o áudio de um vídeo para o formato transcript (JSON).
-# Uso: transcribe.sh <video> <saida.json> [--lang pt]
+# Uso: transcribe.sh <video> <saida.json> [--lang pt] [--force]
 # CLO_TRANSCRIBER=fake usa um transcript fixo (testes, sem Whisper).
 # Modo real: whisper.cpp (`whisper-cli`) com o modelo em $CLO_WHISPER_MODEL
 # (padrão: ~/.cache/clo/ggml-small.bin).
@@ -9,9 +9,13 @@ here="$(cd "${BASH_SOURCE[0]%/*}" && pwd)"
 # shellcheck source=lib/common.sh
 . "$here/lib/common.sh"
 
-[ $# -ge 2 ] || die "uso: transcribe.sh <video> <saida.json> [--lang pt]"
-video="$1"; out="$2"; lang=pt
+force=0; args=()
+for a in "$@"; do if [ "$a" = "--force" ]; then force=1; else args+=("$a"); fi; done
+set -- ${args[@]+"${args[@]}"}
+[ $# -ge 2 ] || die "uso: transcribe.sh <video> <saida.json> [--lang pt] [--force]"
+video="$(abspath "$1")"; out="$(abspath "$2")"; lang=pt
 [ "${3:-}" = "--lang" ] && lang="${4:?}"
+refuse_existing "$out" "$force"
 
 if [ "${CLO_TRANSCRIBER:-}" = "fake" ]; then
   cp "${CLO_FAKE_TRANSCRIPT:-$here/../tests/data/transcript_fake.json}" "$out"

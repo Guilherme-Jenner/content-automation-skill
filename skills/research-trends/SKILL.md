@@ -25,6 +25,6 @@ Formato em `schemas/research.schema.json`: cada achado tem `afirmacao`, `tipo` (
 
 ## 4. Valide e apresente
 ```bash
-python3 scripts/check_research.py research.json
+python3 "${CLAUDE_PLUGIN_ROOT}/scripts/check_research.py" research.json
 ```
 Corrija até passar. Depois mostre um resumo curto: os achados mais úteis, a fonte de cada um e o que mudam no roteiro/edição. As propostas seguintes devem citar o achado que as justifica.

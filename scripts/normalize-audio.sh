@@ -1,18 +1,23 @@
 #!/usr/bin/env bash
 # Normaliza o áudio para ~-14 LUFS (loudnorm em duas passagens). O vídeo é copiado sem re-encode.
-# Uso: normalize-audio.sh <video> <saida.mp4>
+# Uso: normalize-audio.sh <video> <saida.mp4> [--force]
 set -eu
 here="$(cd "${BASH_SOURCE[0]%/*}" && pwd)"
 # shellcheck source=lib/common.sh
 . "$here/lib/common.sh"
 
 [ $# -ge 2 ] || die "uso: normalize-audio.sh <video> <saida.mp4>"
-video="$1"; out="$2"
+force=0; args=()
+for a in "$@"; do if [ "$a" = "--force" ]; then force=1; else args+=("$a"); fi; done
+set -- ${args[@]+"${args[@]}"}
+[ $# -ge 2 ] || die "uso: normalize-audio.sh <video> <saida.mp4> [--force]"
+video="$(abspath "$1")"; out="$(abspath "$2")"
 need_cmd ffmpeg "brew install ffmpeg"
 need_cmd python3 "brew install python"
 [ -f "$video" ] || die "arquivo não encontrado: $video"
 probe_duration "$video" >/dev/null
 require_audio "$video"
+refuse_existing "$out" "$force"
 
 target="I=-14:TP=-1.5:LRA=11"
 log="$(ffmpeg -hide_banner -nostats -i "$video" -af "loudnorm=${target}:print_format=json" -f null - 2>&1)" \

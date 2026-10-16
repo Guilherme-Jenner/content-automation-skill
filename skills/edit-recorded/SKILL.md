@@ -5,10 +5,12 @@ description: Edita um vídeo gravado (corte de silêncios e pausas, cortes criat
 
 # Edição do vídeo gravado
 
+`${CLAUDE_PLUGIN_ROOT}` é a pasta onde o plugin está instalado; use-a em todos os comandos abaixo.
+
 Converse em português do Brasil. Nada é cortado sem aprovação explícita do usuário.
 
 ## 0. Entrada
-Peça o **caminho do arquivo** do vídeo no disco (não peça upload no chat) e confirme que ele existe. Confirme `ffmpeg` com `bash scripts/check-deps.sh`.
+Peça o **caminho do arquivo** do vídeo no disco (não peça upload no chat) e confirme que ele existe. Confirme `ffmpeg` com `bash "${CLAUDE_PLUGIN_ROOT}/scripts/check-deps.sh"`.
 
 ## 1. Entenda a proposta e pesquise
 1. Entenda a ideia e a proposta do vídeo (use o roteiro/shot list, se existir; senão pergunte: objetivo, público, plataforma).
@@ -17,17 +19,22 @@ Peça o **caminho do arquivo** do vídeo no disco (não peça upload no chat) e 
 
 ## 2. Proponha (nada é alterado no vídeo original)
 ```bash
-bash scripts/edit-recorded.sh "<caminho do video>" "<diretorio de trabalho>" --stage propose
+bash "${CLAUDE_PLUGIN_ROOT}/scripts/edit-recorded.sh" "<caminho do video>" "<diretorio de trabalho>" --stage propose
 ```
 Isso grava `transcript.json` (Whisper local) e `cut-plan.json` com os cortes de silêncio (`approved: false`).
-Leia a transcrição e **proponha cortes criativos** além dos silêncios, alinhados ao brief: takes repetidos, hesitações, trechos redundantes, abertura mais forte. Edite `cut-plan.json` (lista `cortes` = trechos removidos, com `motivo`) e mostre ao usuário um resumo claro: o que sai, por quê e o que muda na duração.
+Leia a transcrição e **proponha cortes criativos** além dos silêncios, alinhados ao brief: takes repetidos, hesitações, trechos redundantes, abertura mais forte. Faça os ajustes **editando** `cut-plan.json` (lista `cortes` = trechos removidos, com `motivo`); não rode `propose` de novo, que apagaria o plano (só com `--force`).
+Cortes que se tocam ou se sobrepõem aos de silêncio: junte-os em um só intervalo. Antes de mostrar o plano, valide:
+```bash
+python3 "${CLAUDE_PLUGIN_ROOT}/scripts/validate_cutplan.py" "<diretorio de trabalho>/cut-plan.json"
+```
+Corrija até passar e só então mostre ao usuário um resumo claro: o que sai, por quê e o que muda na duração.
 
 ## 3. Aprovação (obrigatória)
 Só marque `"approved": true` em `cut-plan.json` depois de o usuário confirmar de forma explícita ("aprovo"). Se ele pedir ajustes, edite o plano e mostre de novo. O script recusa planos não aprovados.
 
 ## 4. Aplique
 ```bash
-bash scripts/edit-recorded.sh "<caminho do video>" "<diretorio de trabalho>" --stage apply
+bash "${CLAUDE_PLUGIN_ROOT}/scripts/edit-recorded.sh" "<caminho do video>" "<diretorio de trabalho>" --stage apply
 ```
 Resultado: `final.mp4` (9:16, áudio normalizado, legenda queimada) e `final.srt`. Mostre o caminho ao usuário e peça a avaliação; ajustes voltam ao passo 2. Para refazer, use `--force`.
 

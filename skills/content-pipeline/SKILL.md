@@ -33,4 +33,4 @@ O agendamento ainda não implementado nesta versão. Entregue o vídeo final (`f
 ## Regras
 - Aprovação humana é obrigatória: do roteiro, dos cortes criativos e, no futuro, de data/hora e legenda antes de agendar.
 - Nunca invente dado ou fonte; diga quando algo for hipótese.
-- Se faltar dependência, rode `bash scripts/check-deps.sh` e oriente a instalação.
+- Se faltar dependência, rode `bash "${CLAUDE_PLUGIN_ROOT}/scripts/check-deps.sh"` e oriente a instalação.
