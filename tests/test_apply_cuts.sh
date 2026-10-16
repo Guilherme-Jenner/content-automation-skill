@@ -69,6 +69,6 @@ test_no_partial_output_on_failure() {
   local f out; f="$(fixtures_dir)"; out="$(mktemp -d)"
   _plan "$out/p.json" true '[]'
   _ac "$f/corrupt.mp4" "$out/p.json" "$out/o.mp4" >/dev/null 2>&1 && _fail "deveria falhar"
-  [ -z "$(ls -A "$out" | grep -v '^p.json$')" ] || _fail "sobrou arquivo parcial: $(ls -A "$out")"
+  [ -z "$(find "$out" -mindepth 1 ! -name p.json)" ] || _fail "sobrou arquivo parcial: $(ls -A "$out")"
   rm -rf "$out"
 }

@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+# Transcreve o áudio de um vídeo para o formato transcript (JSON).
+# Uso: transcribe.sh <video> <saida.json> [--lang pt]
+# CLO_TRANSCRIBER=fake usa um transcript fixo (testes, sem Whisper).
+# Modo real: whisper.cpp (`whisper-cli`) com o modelo em $CLO_WHISPER_MODEL
+# (padrão: ~/.cache/clo/ggml-small.bin).
+set -eu
+here="$(cd "${BASH_SOURCE[0]%/*}" && pwd)"
+# shellcheck source=lib/common.sh
+. "$here/lib/common.sh"
+
+[ $# -ge 2 ] || die "uso: transcribe.sh <video> <saida.json> [--lang pt]"
+video="$1"; out="$2"; lang=pt
+[ "${3:-}" = "--lang" ] && lang="${4:?}"
+
+if [ "${CLO_TRANSCRIBER:-}" = "fake" ]; then
+  cp "${CLO_FAKE_TRANSCRIPT:-$here/../tests/data/transcript_fake.json}" "$out"
+  exit 0
+fi
+
+need_cmd whisper-cli "brew install whisper-cpp"
+model="${CLO_WHISPER_MODEL:-$HOME/.cache/clo/ggml-small.bin}"
+[ -f "$model" ] || die "modelo do Whisper não encontrado em $model. Baixe o ggml-small.bin (https://huggingface.co/ggerganov/whisper.cpp) e coloque nesse caminho, ou defina CLO_WHISPER_MODEL"
+need_cmd ffmpeg "brew install ffmpeg"
+need_cmd python3 "brew install python"
+[ -f "$video" ] || die "arquivo não encontrado: $video"
+
+work="$(tmpdir)"
+trap 'rm -rf "$work"' EXIT
+ffmpeg -v error -y -i "$video" -vn -ac 1 -ar 16000 "$work/audio.wav" || die "não foi possível extrair o áudio de $video"
+whisper-cli -m "$model" -l "$lang" -oj -of "$work/saida" -f "$work/audio.wav" >/dev/null 2>&1 \
+  || die "o Whisper falhou ao transcrever $video"
+python3 "$here/whisper_to_transcript.py" "$work/saida.json" > "$work/transcript.json"
+mv "$work/transcript.json" "$out"
