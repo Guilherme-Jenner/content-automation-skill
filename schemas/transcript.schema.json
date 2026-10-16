@@ -1,0 +1,19 @@
+{
+  "type": "object",
+  "required": ["idioma", "segmentos"],
+  "properties": {
+    "idioma": {"type": "string"},
+    "segmentos": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["inicio_s", "fim_s", "texto"],
+        "properties": {
+          "inicio_s": {"type": "number", "minimum": 0},
+          "fim_s": {"type": "number", "minimum": 0},
+          "texto": {"type": "string"}
+        }
+      }
+    }
+  }
+}

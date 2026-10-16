@@ -1,0 +1,21 @@
+{
+  "type": "object",
+  "required": ["titulo", "duracao_alvo_s", "takes"],
+  "properties": {
+    "titulo": {"type": "string"},
+    "duracao_alvo_s": {"type": "number", "exclusiveMinimum": 0},
+    "takes": {
+      "type": "array", "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "enquadramento", "fala", "duracao_s"],
+        "properties": {
+          "id": {"type": "string"},
+          "enquadramento": {"type": "string"},
+          "fala": {"type": "string"},
+          "duracao_s": {"type": "number", "exclusiveMinimum": 0}
+        }
+      }
+    }
+  }
+}
