@@ -49,6 +49,14 @@ docs/         README.md
 - **Agendador**: real (adaptador por MCP) / falso (registra o que seria publicado).
 - **Edição → Remotion**: JSON com transcrição, tempos e estilo.
 
+## Atratividade embasada em pesquisa (adendo de 2026-10-16)
+Roteiro **e** edição criativa devem buscar prender a atenção de quem assiste, e isso deve ser **embasado em dados reais**, não em palpite.
+- Nova skill `research-trends`, usada pelo roteiro e pela edição **antes** de propor qualquer coisa: entende a ideia/proposta do vídeo, pesquisa na web (práticas de retenção, hooks, ritmo, legendas, duração, tendências do nicho e da plataforma) e grava `research.json`.
+- Regra: **nenhuma afirmação sem fonte** (URL + data de acesso). O que não tiver fonte vira "hipótese", marcado como tal. Cada achado traz a *aplicação* no vídeo (ex.: "hook em ≤3 s", "corte a cada ~2 s").
+- Roteiro: o hook e a estrutura propostos citam os achados que os justificam.
+- Edição: a skill monta um **brief de edição** (ideia e proposta do vídeo → ritmo, cortes, legendas, zoom, trilha) amarrado à pesquisa; as propostas criativas continuam passando por aprovação humana.
+- Limite assumido: pesquisa web traz guias, estudos e artigos, não métricas privadas. Quando houver acesso (ex.: Metricool), os dados do **próprio perfil** da CLO entram como fonte mais forte.
+
 ## Edição do gravado (etapa de maior risco)
 1. Validar entrada (`ffprobe`). 2. Transcrever. 3. Detectar silêncios. 4. Skill propõe **plano de cortes** (arquivo JSON); humano aprova. 5. Aplicar cortes (recusa sem plano aprovado). 6. Legenda SRT. 7. Normalizar áudio (~-14 LUFS). 8. 9:16 (1080×1920, sem esticar).
 

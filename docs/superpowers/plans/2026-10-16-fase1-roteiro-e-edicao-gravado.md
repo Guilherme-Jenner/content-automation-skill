@@ -177,6 +177,18 @@ Este plano cobre só a Fase 1. Planos futuros, nesta ordem: (2) agendamento + ag
 - [ ] **Step 1:** Testes: saída valida no schema; `test_words_cover_segment_time_without_overlap`.
 - [ ] **Step 2–4:** Falhar, implementar, passar. **Step 5:** Commit.
 
+### Task 14: Pesquisa embasada (research-trends) e brief de edição — *executar antes da Task 11*
+
+**Files:** Create `schemas/research.schema.json`, `scripts/check_research.py`, `skills/research-trends/SKILL.md`, `tests/data/research_valid.json`, `tests/data/research_no_source.json`, `tests/test_research.sh`; Modify `skills/script-storyboard/SKILL.md` (T4) e `skills/edit-recorded/SKILL.md` (T11)
+
+**Interfaces:**
+- Produces: formato **research** `{proposta, plataforma, data_pesquisa, achados:[{afirmacao, tipo:"fato"|"hipotese", fonte_url?, fonte_titulo?, data_acesso?, aplicacao}]}`. `python3 scripts/check_research.py <research.json>` sai 0 só se: valida no schema; todo achado com `tipo:"fato"` tem `fonte_url` http(s), `fonte_titulo` e `data_acesso`; há ao menos 3 achados e ao menos 1 fato; todo achado tem `aplicacao`. Erro em PT-BR aponta o achado (`achados[1]: fato sem fonte_url`).
+- A skill `research-trends` instrui: entender a ideia/proposta do vídeo (perguntar se faltar), pesquisar na web (WebSearch/WebFetch) retenção, hooks, ritmo de corte, legendas, duração e tendências do nicho/plataforma; gravar `research.json`; rodar `check_research.py`; só então apresentar. Se a busca falhar ou não achar fonte, **dizer isso** e marcar como hipótese; nunca inventar fonte.
+- `script-storyboard` passa a exigir `research.json` válido antes de propor hook/roteiro e a citar o achado que justifica cada escolha. `edit-recorded` passa a exigir um **brief de edição** (ritmo, cortes, legendas, zoom, trilha) ligado aos achados antes de propor cortes criativos; tudo segue sujeito à aprovação do usuário.
+
+- [ ] **Step 1:** Testes: `test_valid_research_passes`; `test_fact_without_source_rejected` (mensagem cita `achados[1]` e `fonte_url`); `test_too_few_findings_rejected`; `test_hypothesis_may_lack_source`; `test_skills_require_research` (SKILL.md de `research-trends` existe com frontmatter e menciona `check_research.py`; os de `script-storyboard` e `edit-recorded` mencionam `research.json`).
+- [ ] **Step 2–4:** Falhar, implementar, passar. **Step 5:** Commit.
+
 ---
 
 ## Auto-revisão
