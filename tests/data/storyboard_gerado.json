@@ -1,0 +1,5 @@
+{"titulo":"Clo App em 30s","duracao_alvo_s":30,"modo":"gerado","cenas":[
+{"id":"c1","descricao":"Hook: pessoa perdida com a rotina","duracao_s":3,"prompt":"pessoa olhando o celular, luz natural, vertical 9:16"},
+{"id":"c2","descricao":"Problema","duracao_s":9,"prompt":"close em notificações acumuladas"},
+{"id":"c3","descricao":"Solução com o Clo App","duracao_s":12,"prompt":"tela do app organizando tarefas"},
+{"id":"c4","descricao":"Chamada para ação","duracao_s":6,"prompt":"logo Clo App com texto Baixe agora"}]}
