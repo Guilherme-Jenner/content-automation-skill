@@ -6,7 +6,9 @@ Uso:
   variant_info.py <plano> list                -> uma linha por variante: "<id> sim|nao" (aprovada)
   variant_info.py <plano> get <id>            -> "<min_silencio_s> <margem_s> <legenda_estilo>"
 """
+import hashlib
 import json
+import os
 import sys
 
 
@@ -21,6 +23,19 @@ def main(argv):
     elif modo == "get":
         v = next(v for v in plano["variantes"] if v["id"] == argv[3])
         linhas = [f"{v['ritmo']['min_silencio_s']} {v['ritmo']['margem_s']} {v['legenda_estilo']}"]
+    elif modo == "key":
+        # Identidade do item de orçamento: muda se o bruto, os trechos, o ritmo ou o estilo mudarem.
+        v = next(v for v in plano["variantes"] if v["id"] == argv[3])
+        carga = json.dumps(
+            {
+                "bruto": os.path.normcase(os.path.normpath(os.path.abspath(plano["bruto"]))),
+                "trechos": sorted([t["inicio_s"], t["fim_s"]] for t in v["trechos"]),
+                "ritmo": v["ritmo"],
+                "estilo": v["legenda_estilo"],
+            },
+            sort_keys=True,
+        )
+        linhas = [f"var-{v['id']}-{hashlib.sha1(carga.encode('utf-8')).hexdigest()[:8]}"]
     elif modo == "seconds":
         v = next(v for v in plano["variantes"] if v["id"] == argv[3])
         linhas = [f"{sum(t['fim_s'] - t['inicio_s'] for t in v['trechos']):g}"]

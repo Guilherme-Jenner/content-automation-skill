@@ -5,7 +5,9 @@
 #             O adaptador real ainda não existe; com CLO_KATANA=fake usa o Katana falso (testes).
 # Uso: run-variants.sh <video> <diretorio> --variants <plano> --stage quote|run [--budget <arquivo>] [--force]
 #   quote: cota cada variante aprovada e mostra o total. NÃO gera nada e NÃO gasta nada.
-#   run:   gera. Para o Katana, só roda variantes cuja cotação foi confirmada (budget.py confirm).
+#   run:   gera. Para o Katana, só roda variantes cuja cotação foi confirmada (budget.py confirm <arquivo> <total>).
+#          Variantes já pagas e com arquivo final são puladas (nunca se cobra duas vezes); um estouro de
+#          cotação é registrado e INTERROMPE o lote.
 set -eu
 here="$(cd "${BASH_SOURCE[0]%/*}" && pwd)"
 # shellcheck source=lib/common.sh
@@ -52,49 +54,86 @@ $(python3 "$here/variant_info.py" "$plan" list)
 EOV
 [ -n "$ids" ] || die "nenhuma variante aprovada; aprove ao menos uma (aprovada: true)"
 
+item_of() { python3 "$here/variant_info.py" "$plan" key "$1"; }
+state_of() { python3 "$here/budget.py" state "$budget" "$1"; }
+
 if [ "$stage" = quote ]; then
   while IFS= read -r id; do
-    custo="$("$here/editors/katana_fake.sh" quote "$plan" "$id")"
-    python3 "$here/budget.py" quote "$budget" "var-$id" "$custo" >/dev/null
+    item="$(item_of "$id")"
+    case "$(state_of "$item")" in
+      confirmado|gasto) echo "já cotada e confirmada: variante $id"; continue ;;
+    esac
+    custo="$("$here/editors/katana_fake.sh" quote "$plan" "$id" </dev/null)"
+    python3 "$here/budget.py" quote "$budget" "$item" "$custo" >/dev/null
   done <<EOA
 $ids
 EOA
   python3 "$here/budget.py" status "$budget"
-  echo "Nenhum crédito foi gasto. Mostre o total ao usuário; só depois da aprovação rode: budget.py confirm $budget"
+  echo "Nenhum crédito foi gasto. Mostre o 'total cotado' ao usuário; só depois da aprovação rode: budget.py confirm $budget <total cotado>"
   exit 0
 fi
 
 # stage run: nada começa antes de TODAS as checagens
 mkdir -p "$work"
+todo=""; feitas=""
 while IFS= read -r id; do
+  item="$(item_of "$id")"
+  if [ "$(state_of "$item")" = gasto ] && [ -e "$work/final-$id.mp4" ]; then
+    feitas="$feitas $id"   # já paga e entregue: nunca se cobra de novo
+    continue
+  fi
   refuse_existing "$work/final-$id.mp4" "$force"
-  python3 "$here/budget.py" check "$budget" "var-$id" >/dev/null \
-    || die "variante $id sem cotação confirmada; rode quote e peça a confirmação do total (budget.py confirm)"
+  atual="$("$here/editors/katana_fake.sh" quote "$plan" "$id" </dev/null)"
+  python3 "$here/budget.py" check "$budget" "$item" "$atual" >/dev/null \
+    || die "variante $id sem cotação confirmada (ou preço mudou): $(python3 "$here/budget.py" check "$budget" "$item" "$atual" 2>&1 | sed 's/^recusado: //'). Rode quote e peça a confirmação do total"
+  todo="${todo}${todo:+$nl}${id}"
 done <<EOA
 $ids
 EOA
+[ -z "$feitas" ] || echo "Puladas (já concluída e paga):${feitas}"
 
-run_one() { # id
-  local id="$1" tmp custo
+run_one() { # id → 0 ok | 3 estouro registrado (arquivo mantido) | outro = falha
+  local id="$1" tmp custo rc
   tmp="$work/.final-$id.partial.mp4"
   # Variável global: o trap roda quando o subshell sai, depois que o escopo local da função acabou.
   CURRENT_TMP="$tmp"
   trap 'rm -f "$CURRENT_TMP"' EXIT
   custo="$("$here/editors/katana_fake.sh" run "$plan" "$id" "$tmp")"
-  python3 "$here/budget.py" spend "$budget" "var-$id" "$custo"
-  mv -f "$tmp" "$work/final-$id.mp4"
-}
-concluidas=""; falharam=""
-while IFS= read -r id; do
   set +e
-  ( set -e; run_one "$id" ) </dev/null
+  python3 "$here/budget.py" spend "$budget" "$(item_of "$id")" "$custo"
   rc=$?
   set -e
-  if [ "$rc" -eq 0 ]; then concluidas="$concluidas $id"; else falharam="$falharam $id"; fi
-done <<EOA
-$ids
+  if [ "$rc" -ne 0 ] && [ "$rc" -ne 3 ]; then exit "$rc"; fi
+  # O crédito já foi consumido: o arquivo é preservado mesmo se o mv falhar.
+  CURRENT_TMP=""
+  mv -f "$tmp" "$work/final-$id.mp4" || { echo "erro: não foi possível mover o vídeo pago; ele está em $tmp" >&2; exit 1; }
+  exit "$rc"
+}
+
+concluidas=""; falharam=""; estouro=""
+if [ -n "$todo" ]; then
+  while IFS= read -r id; do
+    set +e
+    ( set -e; run_one "$id" ) </dev/null
+    rc=$?
+    set -e
+    if [ "$rc" -eq 0 ]; then
+      concluidas="$concluidas $id"
+    elif [ "$rc" -eq 3 ]; then
+      estouro="$id"
+      break
+    else
+      falharam="$falharam $id"
+    fi
+  done <<EOA
+$todo
 EOA
+fi
 echo "Concluídas:${concluidas}"
+if [ -n "$estouro" ]; then
+  echo "Estouro da cotação na variante $estouro: o gasto efetivo foi registrado e o lote foi interrompido; as variantes seguintes não foram geradas." >&2
+  exit 1
+fi
 if [ -n "$falharam" ]; then
   echo "Falharam:${falharam}" >&2
   exit 1
