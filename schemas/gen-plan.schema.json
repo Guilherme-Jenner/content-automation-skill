@@ -1,0 +1,22 @@
+{
+  "type": "object",
+  "required": ["modelo", "aspecto", "resolucao", "audio", "cenas"],
+  "properties": {
+    "modelo": {"type": "string", "enum": ["seedance_2_5"]},
+    "aspecto": {"type": "string", "enum": ["9:16"]},
+    "resolucao": {"type": "string", "enum": ["480p", "720p", "1080p"]},
+    "audio": {"type": "boolean"},
+    "cenas": {
+      "type": "array", "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "prompt", "duracao_s"],
+        "properties": {
+          "id": {"type": "string"},
+          "prompt": {"type": "string"},
+          "duracao_s": {"type": "integer"}
+        }
+      }
+    }
+  }
+}
