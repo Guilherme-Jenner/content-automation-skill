@@ -1,0 +1,3 @@
+{"bruto":"bruto.mp4","editor":"local","quantidade":2,"duracao_s":6.5,"variantes":[
+{"id":"1","tipo":"trecho_diferente","trechos":[{"inicio_s":0,"fim_s":3}],"gancho":"Pergunta sobre a rotina bagunçada","ritmo":{"min_silencio_s":0.6,"margem_s":0.15},"legenda_estilo":"padrao","aprovada":false,"achados":["Hook com a dor em até 3 s"]},
+{"id":"2","tipo":"mesmo_trecho_edicao_diferente","trechos":[{"inicio_s":0,"fim_s":3}],"gancho":"Resultado primeiro, depois o como","ritmo":{"min_silencio_s":0.4,"margem_s":0.05},"legenda_estilo":"destaque","aprovada":false,"achados":["Cortes mais rápidos mantêm o ritmo"]}]}
