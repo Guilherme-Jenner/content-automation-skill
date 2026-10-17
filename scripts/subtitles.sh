@@ -1,21 +1,28 @@
 #!/usr/bin/env bash
 # Gera o .srt a partir do transcript e (por padrão) queima a legenda no vídeo.
-# Uso: subtitles.sh <video> <transcript.json> <saida.mp4> [--srt-only] [--force]
+# Uso: subtitles.sh <video> <transcript.json> <saida.mp4> [--srt-only] [--force] [--style padrao|destaque|discreto]
 # O .srt fica ao lado da saída (mesmo nome, extensão .srt). Sem fala reconhecida, o vídeo é copiado sem legenda.
 set -eu
 here="$(cd "${BASH_SOURCE[0]%/*}" && pwd)"
 # shellcheck source=lib/common.sh
 . "$here/lib/common.sh"
 
-force=0; srt_only=0; args=()
-for a in "$@"; do
-  case "$a" in
-    --force) force=1 ;;
-    --srt-only) srt_only=1 ;;
-    *) args+=("$a") ;;
+force=0; srt_only=0; style_name=padrao; args=()
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --force) force=1; shift ;;
+    --srt-only) srt_only=1; shift ;;
+    --style) [ $# -ge 2 ] || die "--style exige um nome (padrao, destaque ou discreto)"; style_name="$2"; shift 2 ;;
+    *) args+=("$1"); shift ;;
   esac
 done
 set -- ${args[@]+"${args[@]}"}
+case "$style_name" in
+  padrao) style="FontName=Arial,FontSize=14,PrimaryColour=&H00FFFFFF&,OutlineColour=&H00000000&,BorderStyle=1,Outline=2,Alignment=2,MarginV=60" ;;
+  destaque) style="FontName=Arial,FontSize=18,Bold=1,PrimaryColour=&H0000FFFF&,OutlineColour=&H00000000&,BorderStyle=1,Outline=3,Alignment=2,MarginV=80" ;;
+  discreto) style="FontName=Arial,FontSize=11,PrimaryColour=&H00FFFFFF&,OutlineColour=&H00000000&,BorderStyle=1,Outline=1,Alignment=2,MarginV=40" ;;
+  *) die "estilo de legenda desconhecido: $style_name (use padrao, destaque ou discreto)" ;;
+esac
 [ $# -ge 3 ] || die "uso: subtitles.sh <video> <transcript.json> <saida.mp4> [--srt-only] [--force]"
 video="$(abspath "$1")"; transcript="$(abspath "$2")"; out="$(abspath "$3")"
 
@@ -47,7 +54,6 @@ fi
 # O filtro `subtitles` exige escapes frágeis para caminhos; rodamos numa pasta
 # temporária com nome simples (sub.srt) para evitar problemas com espaços, ':' e aspas.
 # Todos os caminhos usados dentro dela são absolutos.
-style="FontName=Arial,FontSize=14,PrimaryColour=&H00FFFFFF&,OutlineColour=&H00000000&,BorderStyle=1,Outline=2,Alignment=2,MarginV=60"
 (cd "$work" && ffmpeg -v error -y -i "$video" -vf "subtitles=sub.srt:force_style='${style}'" \
   -c:v libx264 -pix_fmt yuv420p -c:a copy "$tmp") || die "falha ao queimar a legenda"
 mv -f "$tmp" "$out"
