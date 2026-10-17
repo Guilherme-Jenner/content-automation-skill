@@ -40,7 +40,27 @@ if [ -n "$captions" ]; then
   [ -f "$captions" ] || die "plano de legendas não encontrado: $captions"
   refuse_existing "$srt_out" "$force"
 fi
-probe_duration "$video" >/dev/null
+dur_video="$(probe_duration "$video")"
+
+# O vídeo montado precisa corresponder AOS CLIPES E AO PLANO atuais: o manifesto confere hash e versão do plano
+# (um clipe regerado depois da montagem, ou um plano alterado, desloca ou apaga legendas sem nenhum erro).
+lista="$(python3 "$here/clips_manifest.py" verify "$manifest" "$plan")" || die "os clipes não conferem com o manifesto e o plano; gere/registre de novo e monte outra vez com assemble-clips.sh"
+total_real="$(printf '%s\n' "$lista" | python3 -c "
+import subprocess, sys
+total, n = 0.0, 0
+for linha in sys.stdin.read().split('\n'):
+    if not linha.strip():
+        continue
+    r = subprocess.run(['ffprobe', '-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', linha.strip()],
+                       capture_output=True, text=True, stdin=subprocess.DEVNULL)
+    total += float(r.stdout.strip())
+    n += 1
+print(f'{total:.3f} {n}')")"
+read -r soma_clipes n_clipes <<EOT
+$total_real
+EOT
+python3 -c "import sys; soma, dur, n = float(sys.argv[1]), float(sys.argv[2]), int(sys.argv[3]); sys.exit(0 if abs(soma - dur) <= 0.1 + 0.05 * n else 1)" "$soma_clipes" "$dur_video" "$n_clipes" \
+  || die "o vídeo montado (${dur_video} s) não corresponde aos clipes atuais (${soma_clipes} s no total): monte de novo com assemble-clips.sh antes de editar"
 
 work="$(tmpdir)"
 CURRENT_WORK="$work"
@@ -54,6 +74,11 @@ if [ -n "$captions" ]; then
   python3 "$here/captions_to_transcript.py" "$captions" "$plan" "$manifest" > "$work/transcript.json" \
     || die "as legendas não conferem com o plano e os clipes; nada foi gerado"
   estilo="$(python3 "$here/captions_to_transcript.py" "$captions" "$plan" "$manifest" --estilo)"
+fi
+
+# 1b) valida a música (e o volume) ANTES de qualquer etapa pesada
+if [ -n "$music" ]; then
+  "$here/add-soundtrack.sh" "$video" "$music" "$work/validacao.mp4" --volume-db "$volume" --check-only || die "a música não pode ser usada; nada foi gerado"
 fi
 
 # 2) etapas (cada uma só começa depois da anterior ter dado certo)

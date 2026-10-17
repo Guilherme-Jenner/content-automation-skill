@@ -41,7 +41,9 @@ trap 'rm -rf "$work" "$tmp"' EXIT
 python3 "$here/transcript_to_srt.py" "$transcript" "$duration" > "$work/sub.srt" || die "falha ao gerar o SRT"
 # Cópia só para queimar: chaves escapadas (o libass trataria {texto} como código de estilo e o texto sumiria).
 # O .srt entregue ao usuário (sub.srt) fica com o texto original.
-python3 "$here/transcript_to_srt.py" "$transcript" "$duration" --escapar-ass > "$work/burn.srt" || die "falha ao gerar o SRT de queima"
+# A quebra de linha da cópia de queima segue a largura do estilo na tela (o libass quebra de novo o que não cabe).
+largura="$(python3 "$here/caption_styles.py" largura "$style_name")"
+python3 "$here/transcript_to_srt.py" "$transcript" "$duration" --escapar-ass --largura "$largura" > "$work/burn.srt" || die "falha ao gerar o SRT de queima"
 
 if ! grep -q -e '-->' "$work/sub.srt"; then
   echo "aviso: nenhuma fala reconhecida; o vídeo segue sem legenda" >&2

@@ -5,7 +5,7 @@ Uso: captions_to_transcript.py <captions-plan.json> <gen-plan.json> <clips-manif
 - Os tempos de cada legenda são relativos ao início da cena (padrão: início 0,2 s, fim = duração − 0,2 s).
 - O início de cada cena é a soma das durações REAIS (ffprobe) dos clipes anteriores, na ordem do plano.
 - `--estilo` imprime só o estilo do plano (padrao, destaque ou discreto).
-Recusa: cena que não existe no gen-plan ou no manifesto; texto vazio ou acima de 126 caracteres; fim <= início;
+Recusa: cena que não existe no gen-plan ou no manifesto; texto vazio ou acima do limite do estilo (3 linhas na tela: ver caption_styles.py); fim <= início;
 duração < 0,8 s; tempos fora da cena; legendas sobrepostas na mesma cena; mais de 40 legendas.
 """
 import json
@@ -14,10 +14,10 @@ import subprocess
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from caption_styles import cabe, maximo  # noqa: E402
 from validate_json import validar  # noqa: E402
 
 SCHEMA = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "schemas", "captions-plan.schema.json")
-MAX_CARACTERES = 126  # 3 linhas de 42
 MAX_LEGENDAS = 40
 DURACAO_MINIMA = 0.8
 MARGEM_PADRAO = 0.2
@@ -97,8 +97,11 @@ def main(argv):
             fim = leg.get("fim_s", duracao[cid] - MARGEM_PADRAO)
             if not texto:
                 erros.append(f"{nome}: texto vazio")
-            elif len(texto) > MAX_CARACTERES:
-                erros.append(f"{nome}: texto com {len(texto)} caracteres; o máximo é {MAX_CARACTERES}")
+            elif not cabe(texto, caps["estilo"]):
+                erros.append(
+                    f"{nome}: o texto ({len(texto)} caracteres) não cabe em 3 linhas no estilo '{caps['estilo']}' "
+                    f"(cerca de {maximo(caps['estilo'])} caracteres, conforme o tamanho das palavras); encurte a legenda"
+                )
             if fim <= ini:
                 erros.append(f"{nome}: fim_s ({fim:g}) deve ser maior que inicio_s ({ini:g})")
                 continue

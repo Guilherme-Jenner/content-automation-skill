@@ -13,7 +13,7 @@ Converse em português do Brasil, uma pergunta por vez. Esta etapa **não gasta 
 
 ## 1. Legendas por cena
 Para cada cena, proponha **uma ou mais legendas curtas** que reforcem a mensagem do roteiro e prendam a atenção (cite o achado de `research.json` que justifica as escolhas, ou diga que é hipótese):
-- até **126 caracteres** por legenda (3 linhas de 42), no máximo 40 legendas no vídeo;
+- no máximo **3 linhas na tela**: cabem em torno de 51 caracteres no estilo `padrao`, 39 no `destaque` e 63 no `discreto` (depende do tamanho das palavras; maiúsculas ocupam mais). O script recusa o que não couber; no máximo 40 legendas no vídeo;
 - cada legenda dura pelo menos 0,8 s, dentro da cena, sem sobrepor outra da mesma cena;
 - sem tempos, a legenda cobre a cena inteira (de 0,2 s até 0,2 s antes do fim); com `inicio_s` e `fim_s` você controla o ritmo (tempos relativos ao início da cena);
 - estilo: `padrao`, `destaque` (maior e amarelo) ou `discreto`.
@@ -28,7 +28,7 @@ Mostre ao usuário, cena por cena, o texto e o tempo. **Só depois de uma aprova
 Pergunte se o usuário quer trilha. Ela deve ser um **arquivo de áudio que o usuário já tem** (caminho local).
 - A **licença da música é responsabilidade do usuário**: avise que a música precisa poder ser usada em publicações da empresa. Nunca invente trilha e **não baixe** música protegida; esta ferramenta também não gera música (isso gastaria crédito).
 - As músicas em alta de cada rede costumam ser aplicadas no próprio app ao postar; isso não dá para automatizar aqui.
-- Combine o volume da trilha (`--volume-db`, de -40 a 0; padrão -18). Música mais longa que o vídeo é cortada com fade-out; mais curta é repetida.
+- Combine o volume da trilha (`--volume-db`, de -40 a 0; padrão -18), mas saiba que o volume **só tem efeito quando o vídeo já tem áudio** para misturar: nos clipes gerados sem áudio (o padrão) a trilha sai normalizada (~-14 LUFS) qualquer que seja o volume, e o script avisa. Música mais longa que o vídeo é cortada com fade-out; mais curta é repetida.
 
 ## 3. Editar
 ```bash

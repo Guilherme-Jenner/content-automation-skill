@@ -22,7 +22,7 @@ test_edit_generated_skill_is_honest_about_music_and_cost_and_gaps() {
   assert_contains "$s" "não baixe" "nada de baixar música protegida"
   assert_contains "$s" "ainda não implementad" "variantes e motion do modo gerado"
   assert_contains "$s" "conteúdo de IA" "lembra a declaração de IA ao publicar"
-  assert_contains "$s" "126" "limite de caracteres por legenda"
+  assert_contains "$s" "51" "limite de caracteres por legenda (padrao)"
 }
 
 test_orchestrator_uses_edit_generated() {

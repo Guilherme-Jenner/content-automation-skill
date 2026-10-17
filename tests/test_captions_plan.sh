@@ -73,7 +73,7 @@ PY
   out=$(_run "$d" 2>&1) && _fail "cena sem clipe no manifesto aceita"; assert_contains "$out" "manifesto" "sem clipe"
   rm -rf "$d"; d="$(mktemp -d)"; _prep "$d"
   _caps "$d" "p['cenas'][0]['legendas'][0]['texto']='   '"; out=$(_run "$d" 2>&1) && _fail "texto vazio aceito"; assert_contains "$out" "texto" "texto vazio"
-  _caps "$d" "p['cenas'][0]['legendas'][0]['texto']='x'*127"; out=$(_run "$d" 2>&1) && _fail "texto grande aceito"; assert_contains "$out" "126" "texto grande"
+  _caps "$d" "p['cenas'][0]['legendas'][0]['texto']='x'*58"; out=$(_run "$d" 2>&1) && _fail "texto grande aceito"; assert_contains "$out" "51" "texto grande (referência do estilo padrao)"
   _caps "$d" "p['cenas'][1]['legendas'][0].update(inicio_s=2, fim_s=1)"; out=$(_run "$d" 2>&1) && _fail "fim antes do início aceito"; assert_contains "$out" "fim_s" "fim antes do início"
   _caps "$d" "p['cenas'][1]['legendas'][0].update(inicio_s=1, fim_s=1.5)"; out=$(_run "$d" 2>&1) && _fail "legenda curta aceita"; assert_contains "$out" "0,8" "legenda curta"
   _caps "$d" "p['cenas'][1]['legendas'][0].update(inicio_s=0, fim_s=9)"; out=$(_run "$d" 2>&1) && _fail "fora da cena aceito"; assert_contains "$out" "fora da cena" "fora da cena"

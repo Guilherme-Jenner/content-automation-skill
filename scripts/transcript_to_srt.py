@@ -25,6 +25,13 @@ def main(argv):
     # entre chaves sumiria do vídeo; escapando as chaves ele aparece. O .srt entregue ao usuário não usa isto.
     escapar = "--escapar-ass" in argv
     argv = [a for a in argv if a != "--escapar-ass"]
+    # --largura N: caracteres por linha na quebra (padrão 42, para o .srt entregue; a cópia de queima usa a
+    # largura do estilo, porque o libass quebra de novo o que não cabe na tela).
+    largura = LARGURA
+    if "--largura" in argv:
+        i = argv.index("--largura")
+        largura = int(argv[i + 1])
+        del argv[i : i + 2]
     with open(argv[1], encoding="utf-8") as f:
         dados = json.load(f)
     duracao = float(argv[2]) if len(argv) > 2 else None
@@ -40,9 +47,10 @@ def main(argv):
             fim = min(fim, duracao)
         if fim <= ini:
             continue
-        if escapar:
-            texto = texto.replace("{", "\\{").replace("}", "\\}")
-        blocos.append((ini, fim, "\n".join(textwrap.wrap(texto, LARGURA))))
+        linhas = textwrap.wrap(texto, largura)
+        if escapar:  # depois de quebrar, para o escape nunca ser separado do caractere que protege
+            linhas = [l.replace("{", "\\{").replace("}", "\\}") for l in linhas]
+        blocos.append((ini, fim, "\n".join(linhas)))
     saida = []
     for n, (ini, fim, texto) in enumerate(blocos, 1):
         saida.append(f"{n}\n{tempo(ini)} --> {tempo(fim)}\n{texto}\n")

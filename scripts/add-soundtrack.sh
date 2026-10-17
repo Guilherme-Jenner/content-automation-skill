@@ -3,7 +3,9 @@
 # Uso: add-soundtrack.sh <video> <musica> <saida.mp4> [--volume-db -18] [--force]
 #   - música mais longa que o vídeo: cortada, com fade-out de até 1,5 s terminando no fim do vídeo;
 #     mais curta: repetida em laço; fade-in de até 0,5 s;
-#   - --volume-db: volume da trilha em relação ao original, de -40 a 0 (padrão -18);
+#   - --volume-db: volume da trilha em relação ao original, de -40 a 0 (padrão -18). Só tem efeito quando o vídeo
+#     já tem áudio: em vídeo mudo a trilha sai normalizada (~-14 LUFS) e o script avisa;
+#   - --check-only: só valida (volume, vídeo, música) e sai, sem produzir nada;
 #   - se o vídeo já tem áudio, a trilha entra por baixo (mistura simples, sem ducking);
 #   - a saída é normalizada para ~-14 LUFS (normalize-audio.sh).
 # Licença da música: responsabilidade do usuário. Este script não baixa nem gera música.
@@ -12,11 +14,12 @@ here="$(cd "${BASH_SOURCE[0]%/*}" && pwd)"
 # shellcheck source=lib/common.sh
 . "$here/lib/common.sh"
 
-force=0; volume="-18"; args=()
+force=0; volume="-18"; volume_set=0; check_only=0; args=()
 while [ $# -gt 0 ]; do
   case "$1" in
     --force) force=1; shift ;;
-    --volume-db) [ $# -ge 2 ] || die "--volume-db exige um valor (volume da trilha de -40 a 0 dB)"; volume="$2"; shift 2 ;;
+    --check-only) check_only=1; shift ;;
+    --volume-db) [ $# -ge 2 ] || die "--volume-db exige um valor (volume da trilha de -40 a 0 dB)"; volume="$2"; volume_set=1; shift 2 ;;
     *) args+=("$1"); shift ;;
   esac
 done
@@ -28,7 +31,7 @@ python3 -c "import sys; v = float(sys.argv[1]); sys.exit(0 if -40 <= v <= 0 else
   || die "volume inválido: '$volume' (use um número de -40 a 0 dB)"
 need_cmd ffmpeg "brew install ffmpeg"
 need_cmd ffprobe "brew install ffmpeg"
-refuse_existing "$out" "$force"
+[ "$check_only" -eq 1 ] || refuse_existing "$out" "$force"
 
 [ -f "$video" ] || die "vídeo não encontrado: $video"
 dur="$(probe_duration "$video")"
@@ -42,6 +45,14 @@ python3 -c "import sys; sys.exit(0 if float(sys.argv[1]) > -60 else 1)" "$maxvol
 
 tem_audio=0
 [ -z "$(ffprobe -v error -select_streams a -show_entries stream=codec_type -of csv=p=0 "$video" </dev/null 2>/dev/null)" ] || tem_audio=1
+
+# --check-only: só as validações (volume, vídeo e música); não produz nada. Usado por edit-generated.sh para
+# recusar uma música ruim ANTES de reenquadrar ou queimar legendas.
+[ "$check_only" -eq 0 ] || exit 0
+
+if [ "$tem_audio" -eq 0 ] && [ "$volume_set" -eq 1 ]; then
+  echo "aviso: este vídeo não tem áudio original; --volume-db só tem efeito quando há áudio para misturar. Aqui a trilha sai normalizada para ~-14 LUFS, qualquer que seja o volume pedido." >&2
+fi
 
 read -r fade_in fade_out fade_out_inicio <<EOF
 $(python3 -c "import sys; d = float(sys.argv[1]); fi = min(0.5, d / 4); fo = min(1.5, d / 2); print(f'{fi:g} {fo:g} {d - fo:g}')" "$dur")
