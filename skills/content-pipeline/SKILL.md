@@ -21,7 +21,7 @@ Use a skill `research-trends` (dados reais, com fontes) e depois `script-storybo
 
 ## 3. Etapa do meio
 - **Modo gravado:** entregue a shot list e espere o usuário gravar. Peça o **caminho do arquivo** no disco.
-- **Modo gerado:** use a skill `generate-clips` (Higgsfield, cena a cena, sob um **teto de créditos** definido pelo usuário, com cotação, aprovação do total e registro de cada clipe). Ela monta os clipes em `video-gerado.mp4`. Avise que a **baixa automatizada** do resultado ainda não foi verificada com a conta real, e que as legendas e a trilha do modo gerado ainda não implementadas (a edição segue manual).
+- **Modo gerado:** use a skill `generate-clips` (Higgsfield, cena a cena, sob um **teto de créditos** definido pelo usuário, com cotação, aprovação do total e registro de cada clipe). Ela monta os clipes em `video-gerado.mp4`. Avise que a **baixa automatizada** do resultado ainda não foi verificada com a conta real.
 
 ## 4. Edição: duas perguntas antes de começar
 1. **Qual editor?**
@@ -29,7 +29,7 @@ Use a skill `research-trends` (dados reais, com fontes) e depois `script-storybo
    - `katana`: a edição dentro do Higgsfield, que consome créditos. O editor `katana` ainda não implementado nesta versão: diga isso e ofereça o `local`. Quando existir, ele só roda com **teto de gastos** definido pelo usuário, custo estimado antes e confirmação.
 2. **Quantos vídeos finais?** De 1 a 5 (o máximo é 5, para qualquer editor). Um bruto pode virar vários vídeos: cada um mostra uma parte diferente do bruto, ou a mesma parte com uma edição diferente. Se o usuário pedir mais de 5, explique o limite e peça um número de 1 a 5.
 
-Depois use a skill `edit-recorded` (modo gravado). Para o modo gerado, a edição das cenas geradas ainda não implementada nesta versão.
+Depois use a skill `edit-recorded` (modo gravado). No **modo gerado**, use a skill `edit-generated` (legendas por cena escritas a partir do roteiro e uma trilha sonora que o usuário fornece, tudo local e sem gastar crédito). No modo gerado, as variantes (vários vídeos finais do mesmo bruto) e o motion ainda não implementados nesta versão: gere um único vídeo final e diga isso ao usuário.
 
 ## 5. Agendamento e publicação
 Use a skill `schedule-post`: legenda, hashtags, dias e horários, validação e **aprovação por post** (amarrada ao conteúdo exato). Os agendadores reais (MCP) ainda não implementados nesta versão: a entrega de verdade é o **pacote manual** (`export_package.sh`: vídeo, legenda, horário e passo a passo), que o usuário agenda no próprio Instagram/TikTok. O agendador `fake` serve só para ensaio e não agenda nada de verdade. **Nunca publique nem agende sem aprovação explícita do usuário.**
