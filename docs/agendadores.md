@@ -48,3 +48,10 @@ Para cada candidato, em uma **conta de teste** (nunca nos perfis reais do sócio
 1. Escolher o candidato (preferir a ferramenta que o sócio já paga) e criar uma conta de teste.
 2. Rodar o checklist acima e registrar as respostas aqui.
 3. Só então escrever o adaptador real atrás da porta `schedule.sh --scheduler <nome>`, com testes contra o agendador falso e uma validação manual na conta de teste.
+
+## Atualização: Metricool, plano grátis e conexão (Acessado em 2026-10-17)
+Informações lidas nas páginas do próprio fornecedor (descrição de terceiros, **não verificado** até o teste):
+- Plano grátis: 1 marca, agendar até 20 posts por mês, 30 dias de analytics; redes exceto LinkedIn e Twitter/X, incluindo Instagram e TikTok. A página do MCP diz "no máximo 20 posts agendados" (a pricing diz "por mês"): conferir qual vale. Fonte: https://metricool.com/pricing/
+- O MCP funciona em qualquer plano, inclusive o grátis; lista 27 ferramentas, entre elas `get_brands`, `post_schedule_post`, `update_schedule_post`, `get_scheduled_posts` e `get_best_time_to_post`. Autenticação: OAuth pelo navegador ou token (`METRICOOL_USER_TOKEN` e `METRICOOL_USER_ID`, nas configurações da conta; o local exato não foi dito). Fonte: https://metricool.com/metricool-mcp-claude/
+- Não encontrado nas páginas lidas: o comando exato de instalação no Claude Code, os parâmetros de `post_schedule_post` e as regras de vídeo (a ajuda do fornecedor encontrada na busca fala em link direto/URL pública). O repositório citado pela página (github.com/metricool/mcp-metricool) respondeu 404 em 2026-10-17: conferir o endereço atual.
+- Implicação do plano grátis (1 marca): a marca de teste usa os perfis de teste; trocar para os perfis reais do sócio exige reconectar ou subir de plano.
