@@ -11,6 +11,7 @@ Uso:
   budget.py status <arquivo>
   budget.py confirm <arquivo>          confirma todas as cotações pendentes de uma vez
   budget.py spend  <arquivo> <item> <custo>
+  budget.py check  <arquivo> <item>    sai 0 só se o item está confirmado e ainda não foi gasto
 
 Este módulo só controla o orçamento; quem chama é responsável por pedir a confirmação do usuário
 antes de rodar `confirm` e por só gerar/gastar depois dele.
@@ -22,7 +23,7 @@ import sys
 from decimal import Decimal, InvalidOperation
 
 LIMITE_MAXIMO = Decimal("1000000")
-ITEM_VALIDO = re.compile(r"^[A-Za-z0-9_-]{1,32}$")
+ITEM_VALIDO = re.compile(r"^[A-Za-z0-9_-]{1,40}$")
 
 
 class Recusa(Exception):
@@ -94,7 +95,7 @@ def pendente(dados):
 
 def item_valido(nome):
     if not ITEM_VALIDO.match(nome):
-        raise Recusa(f"item inválido: '{nome}' (use letras, números, _ e -, até 32 caracteres)")
+        raise Recusa(f"item inválido: '{nome}' (use letras, números, _ e -, até 40 caracteres)")
 
 
 def cmd_init(a):
@@ -165,7 +166,28 @@ def cmd_spend(a):
     print(f"gasto registrado: {item} = {fmt(custo)}")
 
 
-COMANDOS = {"init": (cmd_init, 2), "quote": (cmd_quote, 3), "status": (cmd_status, 1), "confirm": (cmd_confirm, 1), "spend": (cmd_spend, 3)}
+def cmd_check(a):
+    caminho, item = a
+    item_valido(item)
+    d = carregar(caminho)
+    if item not in d["itens"]:
+        raise Recusa(f"o item '{item}' não tem cotação")
+    v = d["itens"][item]
+    if v["gasto"] is not None:
+        raise Recusa(f"o gasto do item '{item}' já foi registrado")
+    if not v["confirmado"]:
+        raise Recusa(f"a cotação do item '{item}' ainda não foi confirmada (rode confirm depois que o usuário aprovar o total)")
+    print(f"ok: {item} confirmado ({fmt(v['cotado'])})")
+
+
+COMANDOS = {
+    "init": (cmd_init, 2),
+    "quote": (cmd_quote, 3),
+    "status": (cmd_status, 1),
+    "confirm": (cmd_confirm, 1),
+    "spend": (cmd_spend, 3),
+    "check": (cmd_check, 2),
+}
 
 
 def main(argv):

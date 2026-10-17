@@ -21,6 +21,9 @@ def main(argv):
     elif modo == "get":
         v = next(v for v in plano["variantes"] if v["id"] == argv[3])
         linhas = [f"{v['ritmo']['min_silencio_s']} {v['ritmo']['margem_s']} {v['legenda_estilo']}"]
+    elif modo == "seconds":
+        v = next(v for v in plano["variantes"] if v["id"] == argv[3])
+        linhas = [f"{sum(t['fim_s'] - t['inicio_s'] for t in v['trechos']):g}"]
     else:
         print(f"modo desconhecido: {modo}", file=sys.stderr)
         return 2

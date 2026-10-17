@@ -90,3 +90,17 @@ test_unsafe_item_names_rejected() {
   done
   rm -rf "$d"
 }
+
+test_check_requires_confirmed_unspent_item() {
+  local d out; d="$(_new 100)"
+  out=$(_b check "$d/b.json" a 2>&1) && _fail "item sem cotação"
+  assert_contains "$out" "cotação" "mensagem"
+  _b quote "$d/b.json" a 10 >/dev/null
+  out=$(_b check "$d/b.json" a 2>&1) && _fail "item não confirmado"
+  assert_contains "$out" "confirm" "mensagem"
+  _b confirm "$d/b.json" >/dev/null 2>&1
+  _b check "$d/b.json" a >/dev/null 2>&1 || _fail "item confirmado deveria passar"
+  _b spend "$d/b.json" a 10 >/dev/null 2>&1
+  _b check "$d/b.json" a >/dev/null 2>&1 && _fail "item já gasto"
+  rm -rf "$d"
+}
