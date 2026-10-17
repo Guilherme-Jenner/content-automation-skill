@@ -36,7 +36,7 @@
               "margem_s": {"type": "number", "minimum": 0}
             }
           },
-          "legenda_estilo": {"type": "string"},
+          "legenda_estilo": {"type": "string", "enum": ["padrao", "destaque", "discreto"]},
           "aprovada": {"type": "boolean"},
           "achados": {"type": "array", "items": {"type": "string"}}
         }

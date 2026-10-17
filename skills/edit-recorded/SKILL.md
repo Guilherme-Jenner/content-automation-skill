@@ -41,7 +41,9 @@ Resultado: `final.mp4` (9:16, áudio normalizado, legenda queimada) e `final.srt
 ## 5. Várias versões do mesmo bruto (variantes)
 Quando o usuário quiser mais de um vídeo final (de 1 a 5; o editor é `local`), em vez de um único `cut-plan.json` use um `variants-plan.json` no diretório de trabalho (formato em `schemas/variants-plan.schema.json`). Rode antes o `propose` para obter `transcript.json`. Cada variante tem `tipo`:
 - `trecho_diferente`: mostra outra parte do bruto;
-- `mesmo_trecho_edicao_diferente`: mesma parte, com edição diferente (ritmo dos cortes, estilo de legenda, gancho).
+- `mesmo_trecho_edicao_diferente`: mesma parte, com edição diferente (ritmo dos cortes e estilo de legenda: `padrao`, `destaque` ou `discreto`).
+
+O `gancho` de cada variante é a ideia de abertura que a variante defende: no editor local ele é definido pelos **trechos que abrem o vídeo** e pelo texto da legenda do post, mas **não é renderizado** como texto ou efeito pelo editor. Duas variantes com os mesmos trechos, ritmo e estilo saem idênticas (o validador avisa).
 
 Regras da proposta:
 - Cada variante tem um **gancho distinto**, ligado a um achado de `research.json` (campo `achados`). Se, na quantidade pedida, não houver outro gancho bom o bastante, repita um gancho: marque `gancho_repetido: true`, escreva `justificativa_gancho`, **diga isso ao usuário** e varie o restante (ritmo, trechos, legenda).

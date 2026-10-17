@@ -29,29 +29,52 @@ apply_variants() {
   [ -f "$variants" ] || die "variants-plan não encontrado: $variants"
   [ -f "$work/transcript.json" ] || die "rode antes o estágio propose neste diretório (falta transcript.json)"
   python3 "$here/validate_variants.py" "$variants" || die "variants-plan inválido: $variants"
+  # O transcript vem do propose: confira que ele foi feito para ESTE vídeo.
+  python3 - "$work/cut-plan.json" "$video" <<'PY' || die "o transcript em $work foi gerado para outro vídeo; rode o propose para este vídeo"
+import json, os, sys
+norm = lambda p: os.path.normcase(os.path.normpath(os.path.abspath(p)))
+plano = json.load(open(sys.argv[1], encoding="utf-8"))
+sys.exit(0 if norm(plano["video"]) == norm(sys.argv[2]) else 1)
+PY
   python3 - "$variants" "$video" <<'PY' || die "o variants-plan foi feito para outro vídeo"
 import json, os, sys
 norm = lambda p: os.path.normcase(os.path.normpath(os.path.abspath(p)))
 plano = json.load(open(sys.argv[1], encoding="utf-8"))
 sys.exit(0 if norm(plano["bruto"]) == norm(sys.argv[2]) else 1)
 PY
-  local editor ids aprovadas puladas id
+  local editor ids aprovadas puladas id rc nl
   editor="$(python3 "$here/variant_info.py" "$variants" editor)"
   [ "$editor" = "local" ] || die "o editor '$editor' ainda não implementado; use editor local no variants-plan"
+  nl=$'\n'
   aprovadas=""; puladas=""
   ids="$(python3 "$here/variant_info.py" "$variants" list)"
   while read -r id ok; do
-    if [ "$ok" = sim ]; then aprovadas="$aprovadas $id"; else puladas="$puladas $id"; fi
+    if [ "$ok" = sim ]; then aprovadas="${aprovadas}${aprovadas:+$nl}${id}"; else puladas="$puladas $id"; fi
   done <<EOV
 $ids
 EOV
   [ -n "$aprovadas" ] || die "nenhuma variante aprovada; aprove ao menos uma (aprovada: true) no variants-plan"
-  for id in $aprovadas; do refuse_existing "$work/final-$id.mp4" "$force"; done
+  while IFS= read -r id; do
+    [ -n "$id" ] || continue
+    refuse_existing "$work/final-$id.mp4" "$force"
+    refuse_existing "$work/final-$id.srt" "$force"
+  done <<EOA
+$aprovadas
+EOA
 
   local concluidas="" falharam=""
-  for id in $aprovadas; do
-    if ( run_variant "$id" ); then concluidas="$concluidas $id"; else falharam="$falharam $id"; fi
-  done
+  while IFS= read -r id; do
+    [ -n "$id" ] || continue
+    # Fora de `if`: dentro de uma condição o bash desliga o errexit e as etapas seguintes rodariam após uma falha.
+    set +e
+    # </dev/null: o ffmpeg lê o stdin e engoliria os ids restantes do laço.
+    ( set -e; run_variant "$id" ) </dev/null
+    rc=$?
+    set -e
+    if [ "$rc" -eq 0 ]; then concluidas="$concluidas $id"; else falharam="$falharam $id"; fi
+  done <<EOA
+$aprovadas
+EOA
   [ -z "$puladas" ] || echo "Puladas (variante não aprovada):${puladas}"
   echo "Concluídas:${concluidas}"
   if [ -n "$falharam" ]; then
@@ -63,10 +86,11 @@ EOV
 run_variant() { # id
   local id="$1" vdir="$work/v$1" info minsil margem estilo
   # Aspas duplas: $vdir é local da função e precisa ser expandido agora, não quando o subshell sair.
-  # shellcheck disable=SC2064
-  trap "rm -f \"$vdir\"/*.mp4" EXIT
+  CURRENT_VDIR="$vdir"
+  trap 'rm -f "$CURRENT_VDIR"/*.mp4' EXIT
   [ "${CLO_TEST_FAIL_VARIANT:-}" != "$id" ] || die "falha simulada na variante $id (teste)"
   mkdir -p "$vdir"
+  rm -f "$vdir"/*.json  # nunca reaproveitar silêncios/plano de uma execução anterior
   info="$(python3 "$here/variant_info.py" "$variants" get "$id")"
   read -r minsil margem estilo <<EOI
 $info

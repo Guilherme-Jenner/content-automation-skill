@@ -10,6 +10,7 @@ Uso: validate_variants.py <variants-plan.json>
 """
 import json
 import os
+import re
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -17,6 +18,7 @@ from validate_json import validar  # noqa: E402
 
 SCHEMA = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "schemas", "variants-plan.schema.json")
 MAX_VARIANTES = 5
+ID_VALIDO = re.compile(r"^[A-Za-z0-9_-]{1,32}$")
 
 
 def soma(trechos):
@@ -45,9 +47,13 @@ def main(argv):
             erros.append(f"quantidade deve estar entre 1 e {MAX_VARIANTES} (recebido {plano['quantidade']})")
         if plano["quantidade"] != len(variantes):
             erros.append(f"quantidade ({plano['quantidade']}) não bate com o número de variantes ({len(variantes)})")
-        ids = [v["id"] for v in variantes]
+        for i, v in enumerate(variantes):
+            if not ID_VALIDO.match(v["id"]):
+                erros.append(f"variantes[{i}].id inválido: use só letras, números, _ e - (até 32 caracteres)")
+        # ids viram nomes de arquivo (v<id>/, final-<id>.mp4): maiúsculas/minúsculas colidem no Mac e no Windows
+        ids = [v["id"].lower() for v in variantes]
         if len(set(ids)) != len(ids):
-            erros.append("ids de variantes repetidos")
+            erros.append("ids de variantes repetidos (maiúsculas e minúsculas contam como iguais)")
         for i, v in enumerate(variantes):
             nome = f"variantes[{i}]"
             trechos = sorted(v["trechos"], key=lambda t: t["inicio_s"])
@@ -77,6 +83,12 @@ def main(argv):
                 vistos[g] = i
         # redundância
         if not erros:
+            for i in range(len(variantes)):
+                for j in range(i + 1, len(variantes)):
+                    a, b = variantes[i], variantes[j]
+                    if (sorted((t["inicio_s"], t["fim_s"]) for t in a["trechos"]) == sorted((t["inicio_s"], t["fim_s"]) for t in b["trechos"])
+                            and a["ritmo"] == b["ritmo"] and a["legenda_estilo"] == b["legenda_estilo"]):
+                        avisos.append(f"aviso: variantes {a['id']} e {b['id']} têm os mesmos trechos, ritmo e estilo de legenda: o vídeo sairá idêntico (o gancho não é renderizado pelo editor local)")
             for i in range(len(variantes)):
                 for j in range(i + 1, len(variantes)):
                     a, b = variantes[i], variantes[j]
