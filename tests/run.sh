@@ -19,7 +19,8 @@ for file in "$ROOT"/tests/test_*.sh; do
       # shellcheck source=/dev/null
       . "$ROOT/tests/lib/assert.sh"
       # shellcheck source=/dev/null
-      . "$file"
+      . "$file" || { echo "erro ao carregar $file (sintaxe?)"; exit 1; }
+      [ "$(type -t "$fn")" = function ] || { echo "função $fn não foi definida (erro de sintaxe no arquivo?)"; exit 1; }
       "$fn"
       exit "$CLO_TEST_FAILED"
     ) 2>&1
