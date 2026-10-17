@@ -38,8 +38,25 @@ Use só `--captions` ou só `--music` se for o caso (pelo menos uma é obrigató
 
 Depois, confira o resultado com o usuário (legendas legíveis, tempos, volume da trilha). Ajustes voltam ao passo 1 ou 2, e o usuário aprova de novo o que mudou.
 
+## 4. Variantes: de 1 a 5 vídeos finais com os mesmos clipes
+Se o usuário quer mais de um vídeo final, cada variante recombina os **clipes já gerados**: outra seleção e ordem de cenas, outras legendas, outro estilo e, se quiser, outra trilha. Isso **não gasta crédito** e não mexe no teto. Clipes **novos** custam crédito: são da skill `generate-clips`, com teto e confirmação.
+- Máximo de 5 variantes. Cada cena entra no máximo uma vez por variante; variantes idênticas são recusadas.
+- O **gancho** de uma variante é a primeira legenda da primeira cena. Por padrão, os ganchos são diferentes entre as variantes; se não houver outro gancho bom, repita com `gancho_repetido: true` e `justificativa_gancho`, e varie o resto.
+- Cada variante cita os achados de `research.json` que a justificam (`achados`), e só roda com `"aprovada": true` depois da aprovação explícita do usuário **por variante**.
+- Grave o `gen-variants-plan.json` (formato em `schemas/gen-variants-plan.schema.json`; `legendas` tem o formato do `captions-plan.json`; `musica` é opcional e relativa à pasta do plano):
+```json
+{"quantidade": 2, "variantes": [
+  {"id": "A", "cenas": ["c1", "c2", "c3"], "aprovada": true, "achados": ["pergunta no início retém mais"],
+   "legendas": {"estilo": "padrao", "cenas": [{"cena": "c1", "legendas": [{"texto": "Sua rotina vive bagunçada?"}]}]}},
+  {"id": "B", "cenas": ["c3", "c1"], "aprovada": true, "achados": ["resultado primeiro"], "musica": "trilha.mp3", "volume_db": -18,
+   "legendas": {"estilo": "destaque", "cenas": [{"cena": "c3", "legendas": [{"texto": "Tudo em um lugar só"}]}]}}]}
+```
+```bash
+bash "${CLAUDE_PLUGIN_ROOT}/scripts/run-gen-variants.sh" "<gen-plan.json>" "<clips-manifest.json>" "<pasta-de-saida>" --variants "<gen-variants-plan.json>"
+```
+O script valida **todas** as variantes aprovadas antes de produzir qualquer arquivo e entrega `final-<id>.mp4` e `final-<id>.srt` por variante. Se uma variante falhar na produção, as outras seguem e o script termina com erro listando as que falharam. Se a saída já existir, ele pede `--force`.
+
 ## O que ainda não existe
-- Variantes (vários vídeos finais a partir do mesmo bruto) no modo gerado ainda não implementadas: hoje existem só para o modo gravado.
 - Movimento, efeitos e tipografia animada (Remotion) ainda não implementados; ficam para o fim do projeto.
 - Ducking automático da trilha sobre uma fala: ainda não implementado (a trilha entra por baixo com mistura simples).
 

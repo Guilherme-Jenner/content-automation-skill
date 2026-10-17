@@ -30,3 +30,26 @@ test_orchestrator_uses_edit_generated() {
   assert_contains "$s" "edit-generated" "usa a skill de edição do modo gerado"
   assert_contains "$s" "ainda não implementad" "continua honesta sobre o que falta"
 }
+
+test_edit_generated_skill_documents_variants() {
+  local s; s=$(cat "$ROOT/skills/edit-generated/SKILL.md")
+  assert_contains "$s" "run-gen-variants.sh" "script de lote"
+  assert_contains "$s" "gen-variants-plan.json" "plano de variantes"
+  assert_contains "$s" "de 1 a 5" "limite de variantes"
+  assert_contains "$s" "gancho" "ganchos diferentes entre variantes"
+  assert_contains "$s" "aprovada" "aprovação por variante"
+  assert_contains "$s" "não gasta crédito" "variantes não gastam crédito"
+  assert_contains "$s" "generate-clips" "clipes novos são outra skill, com teto"
+  case "$s" in *"Variantes (vários vídeos finais a partir do mesmo bruto) no modo gerado ainda não"*) _fail "ainda diz que variantes não existem";; esac
+}
+
+test_orchestrator_offers_variants_in_generated_mode() {
+  local s; s=$(cat "$ROOT/skills/content-pipeline/SKILL.md")
+  assert_contains "$s" "run-gen-variants" "variantes do modo gerado"
+  case "$s" in *"as variantes (vários vídeos finais do mesmo bruto) e o motion ainda não"*) _fail "orquestradora desatualizada";; esac
+}
+
+test_schemas_and_architecture_mention_gen_variants() {
+  assert_file_exists "$ROOT/schemas/gen-variants-plan.schema.json"
+  assert_contains "$(cat "$ROOT/docs/arquitetura.md")" "run-gen-variants" "documentado na arquitetura"
+}

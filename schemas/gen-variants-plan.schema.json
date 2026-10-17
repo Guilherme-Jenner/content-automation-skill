@@ -1,0 +1,25 @@
+{
+  "type": "object",
+  "required": ["quantidade", "variantes"],
+  "properties": {
+    "quantidade": {"type": "integer"},
+    "variantes": {
+      "type": "array", "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "cenas", "legendas", "aprovada", "achados"],
+        "properties": {
+          "id": {"type": "string"},
+          "cenas": {"type": "array", "minItems": 1, "items": {"type": "string"}},
+          "legendas": {"type": "object"},
+          "musica": {"type": "string"},
+          "volume_db": {"type": "number"},
+          "gancho_repetido": {"type": "boolean"},
+          "justificativa_gancho": {"type": "string"},
+          "aprovada": {"type": "boolean"},
+          "achados": {"type": "array", "items": {"type": "string"}}
+        }
+      }
+    }
+  }
+}

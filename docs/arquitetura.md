@@ -13,7 +13,7 @@ Plugin do Claude Code: skills (instruções para o Claude) + scripts (bash + ffm
 | `generate-clips` | Modo gerado: cotar, aprovar o total, gerar cena a cena sob teto e montar os clipes |
 | `schedule-post` | Legenda, horários e aprovação por hash; entrega pelo pacote manual |
 
-Fases seguintes: adaptadores reais (Katana, agendador por MCP, geração real), variantes e motion no modo gerado, empacotamento para o Mac e, por último, o polimento visual com Remotion.
+Fases seguintes: adaptadores reais (Katana, agendador por MCP, geração real), motion no modo gerado, empacotamento para o Mac e, por último, o polimento visual com Remotion.
 
 ## Scripts (cada um testável sozinho)
 `silence-detect.sh` → `apply-cuts.sh` (só com plano `approved:true`) → `normalize-audio.sh` → `reframe-9x16.sh` → `subtitles.sh`; `transcribe.sh` é a porta do Whisper (real ou falsa); `edit-recorded.sh` orquestra os estágios `propose` e `apply`; `retime_transcript.py` ajusta as legendas à linha do tempo cortada.
@@ -35,3 +35,6 @@ Fases seguintes: adaptadores reais (Katana, agendador por MCP, geração real), 
 
 ## Edição do modo gerado (Fase 3b)
 `captions-plan.json` (textos por cena, tempos relativos, aprovados pelo usuário) → `captions_to_transcript.py` (tempos absolutos com a duração REAL dos clipes) → `subtitles.sh --style`. A trilha é um arquivo do usuário: `add-soundtrack.sh` corta/repete, aplica fades e volume e normaliza (~-14 LUFS). `edit-generated.sh` valida tudo antes de processar e entrega atomicamente `final.mp4` (1080x1920) e `final.srt`. Texto entre chaves é escapado só na cópia de queima (o libass trataria `{...}` como código de estilo).
+
+## Variantes do modo gerado (Fase 3c)
+`gen-variants-plan.json` (1 a 5 variantes; cada uma com cenas na ordem escolhida, legendas, estilo e trilha opcional; `aprovada` por variante) → `validate_gen_variants.py` (ids seguros, cenas existentes, gancho = primeira legenda e diferente entre variantes, variantes idênticas recusadas) → `gen_variant_info.py` deriva um gen-plan por variante (mesmos prompts, logo mesma chave de orçamento e mesma verificação de hash do manifesto) → `run-gen-variants.sh`: valida tudo antes de produzir, depois `assemble-clips.sh` + `edit-generated.sh` por variante, entregando `final-<id>.mp4/.srt`. Custo zero; nunca toca no orçamento.

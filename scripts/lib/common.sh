@@ -37,7 +37,7 @@ require_audio() { # arquivo
 # Caminho absoluto sem exigir que o arquivo exista (scripts que mudam de diretório precisam disso).
 abspath() { # caminho
   case "$1" in
-    /*) printf '%s\n' "$1" ;;
+    /* | [A-Za-z]:[\\/]*) printf '%s\n' "$1" ;;   # inclui C:\... e C:/... (caminhos que o Python imprime no Windows)
     *) printf '%s/%s\n' "$(pwd)" "$1" ;;
   esac
 }
