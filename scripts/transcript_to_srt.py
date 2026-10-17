@@ -21,6 +21,10 @@ def tempo(s):
 
 
 def main(argv):
+    # --escapar-ass: só para a cópia usada na QUEIMA. O libass trata {...} como código de estilo e o texto
+    # entre chaves sumiria do vídeo; escapando as chaves ele aparece. O .srt entregue ao usuário não usa isto.
+    escapar = "--escapar-ass" in argv
+    argv = [a for a in argv if a != "--escapar-ass"]
     with open(argv[1], encoding="utf-8") as f:
         dados = json.load(f)
     duracao = float(argv[2]) if len(argv) > 2 else None
@@ -36,6 +40,8 @@ def main(argv):
             fim = min(fim, duracao)
         if fim <= ini:
             continue
+        if escapar:
+            texto = texto.replace("{", "\\{").replace("}", "\\}")
         blocos.append((ini, fim, "\n".join(textwrap.wrap(texto, LARGURA))))
     saida = []
     for n, (ini, fim, texto) in enumerate(blocos, 1):

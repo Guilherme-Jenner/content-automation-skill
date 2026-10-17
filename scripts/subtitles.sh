@@ -39,6 +39,9 @@ work="$(tmpdir)"
 tmp="$(dirname "$out")/.$(basename "$out").partial.mp4"
 trap 'rm -rf "$work" "$tmp"' EXIT
 python3 "$here/transcript_to_srt.py" "$transcript" "$duration" > "$work/sub.srt" || die "falha ao gerar o SRT"
+# Cópia só para queimar: chaves escapadas (o libass trataria {texto} como código de estilo e o texto sumiria).
+# O .srt entregue ao usuário (sub.srt) fica com o texto original.
+python3 "$here/transcript_to_srt.py" "$transcript" "$duration" --escapar-ass > "$work/burn.srt" || die "falha ao gerar o SRT de queima"
 
 if ! grep -q -e '-->' "$work/sub.srt"; then
   echo "aviso: nenhuma fala reconhecida; o vídeo segue sem legenda" >&2
@@ -54,7 +57,7 @@ fi
 # O filtro `subtitles` exige escapes frágeis para caminhos; rodamos numa pasta
 # temporária com nome simples (sub.srt) para evitar problemas com espaços, ':' e aspas.
 # Todos os caminhos usados dentro dela são absolutos.
-(cd "$work" && ffmpeg -v error -y -i "$video" -vf "subtitles=sub.srt:force_style='${style}'" \
+(cd "$work" && ffmpeg -v error -y -i "$video" -vf "subtitles=burn.srt:force_style='${style}'" \
   -c:v libx264 -pix_fmt yuv420p -c:a copy "$tmp") || die "falha ao queimar a legenda"
 mv -f "$tmp" "$out"
 cp "$work/sub.srt" "$srt"

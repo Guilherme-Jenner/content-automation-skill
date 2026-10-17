@@ -54,3 +54,29 @@ test_burn_in_with_special_path() {
   assert_near 4 "$(ffprobe -v error -show_entries format=duration -of csv=p=0 "$d/saída.mp4")" 0.15 "duração mantida"
   rm -rf "$d"
 }
+
+# energia do quadro (soma dos pixels em cinza) no instante 1 s: texto visível = valor alto
+_energia() {
+  ffmpeg -v error -ss 1 -i "$1" -frames:v 1 -vf "scale=48:85" -f rawvideo -pix_fmt gray - </dev/null | python3 -c "import sys; print(sum(sys.stdin.buffer.read()))"
+}
+
+test_braces_in_caption_text_are_rendered_not_swallowed() {
+  local d; d="$(mktemp -d)"
+  ffmpeg -v error -y -f lavfi -i "color=c=black:size=480x854:rate=25:duration=2" -c:v libx264 -pix_fmt yuv420p -an "$d/base.mp4" </dev/null
+  printf '%s' '{"idioma":"pt","segmentos":[{"inicio_s":0.1,"fim_s":1.9,"texto":"{XXXXXXXX}"}]}' > "$d/t.json"
+  bash "$ROOT/scripts/subtitles.sh" "$d/base.mp4" "$d/t.json" "$d/o.mp4" >/dev/null 2>&1 || _fail "subtitles.sh falhou"
+  local e; e="$(_energia "$d/o.mp4")"
+  [ "$e" -gt 5000 ] || _fail "o texto entre chaves sumiu do vídeo (energia $e)"
+  rm -rf "$d"
+}
+
+test_sidecar_srt_stays_clean_while_the_burned_copy_is_escaped() {
+  local d; d="$(mktemp -d)"
+  ffmpeg -v error -y -f lavfi -i "color=c=black:size=480x854:rate=25:duration=2" -c:v libx264 -pix_fmt yuv420p -an "$d/base.mp4" </dev/null
+  printf '%s' '{"idioma":"pt","segmentos":[{"inicio_s":0.1,"fim_s":1.9,"texto":"Oi {nome} tudo bem"}]}' > "$d/t.json"
+  bash "$ROOT/scripts/subtitles.sh" "$d/base.mp4" "$d/t.json" "$d/o.mp4" >/dev/null 2>&1 || _fail "subtitles.sh falhou"
+  assert_contains "$(cat "$d/o.srt")" "Oi {nome} tudo bem" ".srt entregue com o texto original"
+  case "$(cat "$d/o.srt")" in *'\{'*) _fail "o .srt entregue não deve ter escapes do renderizador" ;; esac
+  python3 "$ROOT/scripts/transcript_to_srt.py" "$d/t.json" --escapar-ass | grep -qF 'Oi \{nome\} tudo bem' || _fail "--escapar-ass deveria escapar as chaves"
+  rm -rf "$d"
+}
