@@ -3,6 +3,8 @@
 
   clips_manifest.py add  <manifesto> <id> <arquivo-relativo> <custo> <item> <origem> [job_id]
   clips_manifest.py show <manifesto>      -> ids dos clipes, um por linha, em ordem alfabética
+  clips_manifest.py verify <manifesto> <gen-plan>   -> caminhos dos clipes NA ORDEM DO PLANO, um por linha;
+                                          falha se faltar cena no manifesto, arquivo ou se o hash não bater
 
 O arquivo é relativo à pasta do manifesto. O sha256 é calculado na hora do registro. Escrita atômica, com trava.
 """
@@ -80,14 +82,40 @@ def cmd_show(manifesto):
     return 0
 
 
+def cmd_verify(manifesto, plano_caminho):
+    with open(plano_caminho, encoding="utf-8") as f:
+        plano = json.load(f)
+    base = os.path.dirname(os.path.abspath(manifesto))
+    with travar(manifesto):
+        dados = carregar(manifesto)
+    caminhos = []
+    for cena in plano["cenas"]:
+        c = dados["clips"].get(cena["id"])
+        if c is None:
+            print(f"a cena '{cena['id']}' não está no manifesto: gere ou registre o clipe antes de montar", file=sys.stderr)
+            return 1
+        caminho = os.path.normpath(os.path.join(base, c["arquivo"]))
+        if not os.path.isfile(caminho):
+            print(f"o clipe da cena '{cena['id']}' não foi encontrado: {c['arquivo']}", file=sys.stderr)
+            return 1
+        if sha256(caminho) != c["sha256"]:
+            print(f"o clipe da cena '{cena['id']}' mudou depois do registro (hash diferente do manifesto)", file=sys.stderr)
+            return 1
+        caminhos.append(caminho)
+    sys.stdout.buffer.write(("\n".join(caminhos) + "\n").encode("utf-8"))
+    return 0
+
+
 def main(argv):
-    if len(argv) < 3 or argv[1] not in ("add", "show"):
+    if len(argv) < 3 or argv[1] not in ("add", "show", "verify"):
         print(__doc__, file=sys.stderr)
         return 2
     if argv[1] == "add" and 7 <= len(argv) - 0 <= 9:
         return cmd_add(*argv[2:])
     if argv[1] == "show" and len(argv) == 3:
         return cmd_show(argv[2])
+    if argv[1] == "verify" and len(argv) == 4:
+        return cmd_verify(argv[2], argv[3])
     print(__doc__, file=sys.stderr)
     return 2
 
