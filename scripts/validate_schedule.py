@@ -5,7 +5,7 @@ Erros (exit 1): schema; ids inseguros ou repetidos (maiúsculas contam como igua
 data_hora fora do formato AAAA-MM-DDTHH:MM:SS-03:00, a menos de 15 minutos de agora ou a mais de 30 dias;
 perfis vazios ou duplicados; hashtags inválidas; legenda acima do limite.
 
-Uso: validate_schedule.py <schedule-plan.json> [--now <ISO com fuso>]
+Uso: validate_schedule.py <schedule-plan.json> [--post <id>] [--now <ISO com fuso>]   (--now: só em testes)
 Também importável: erros_do_plano(caminho, now) -> lista de mensagens.
 """
 import json
@@ -28,8 +28,20 @@ LIMITE_LEGENDA = 2200
 
 
 def agora(argv):
+    """Relógio. `--now` só existe para testes: em produção o prazo é sempre contra a hora real."""
     if "--now" in argv:
-        return datetime.fromisoformat(argv[argv.index("--now") + 1])
+        if os.environ.get("CLO_ALLOW_TEST_NOW") != "1":
+            sys.exit("recusado: --now só para testes (o prazo é sempre conferido contra a hora real)")
+        i = argv.index("--now")
+        if i + 1 >= len(argv):
+            sys.exit("recusado: --now exige uma data ISO com fuso")
+        try:
+            dt = datetime.fromisoformat(argv[i + 1])
+        except ValueError:
+            sys.exit(f"recusado: --now inválido: {argv[i + 1]}")
+        if dt.tzinfo is None:
+            sys.exit("recusado: --now precisa de fuso (ex.: 2026-10-20T10:00:00-03:00)")
+        return dt
     return datetime.now(timezone.utc)
 
 
@@ -38,7 +50,7 @@ def caminho_do_video(caminho_plano, video):
     return video if os.path.isabs(video) else os.path.join(base, video)
 
 
-def erros_do_plano(caminho, now):
+def erros_do_plano(caminho, now, post_id=None):
     with open(SCHEMA, encoding="utf-8") as f:
         schema = json.load(f)
     with open(caminho, encoding="utf-8") as f:
@@ -55,6 +67,10 @@ def erros_do_plano(caminho, now):
         if p["id"].lower() in vistos:
             erros.append("ids de posts repetidos (maiúsculas e minúsculas contam como iguais)")
         vistos.add(p["id"].lower())
+        # A estrutura (ids, schema) vale para o plano inteiro; as regras de conteúdo e de prazo,
+        # só para o post-alvo: um post vencido não pode bloquear os demais.
+        if post_id is not None and p["id"] != post_id:
+            continue
         if not os.path.isfile(caminho_do_video(caminho, p["video"])):
             erros.append(f"{nome}.video não encontrado: {p['video']}")
         if not DATA_HORA.match(p["data_hora"]):
@@ -83,7 +99,8 @@ def erros_do_plano(caminho, now):
 
 
 def main(argv):
-    erros = erros_do_plano(argv[1], agora(argv))
+    post_id = argv[argv.index("--post") + 1] if "--post" in argv else None
+    erros = erros_do_plano(argv[1], agora(argv), post_id)
     for e in erros:
         print(e, file=sys.stderr)
     return 1 if erros else 0

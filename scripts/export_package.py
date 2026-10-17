@@ -57,7 +57,7 @@ def main(argv):
     plano, post_id, saida = args
     try:
         post = achar_post(plano, post_id)
-        erros = erros_do_plano(plano, now)
+        erros = erros_do_plano(plano, now, post_id)
         if erros:
             raise Recusa("o plano não está válido:\n  " + "\n  ".join(erros))
         destino = os.path.join(saida, post_id)

@@ -5,6 +5,7 @@ set -u
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 export ROOT
 export PYTHONUTF8=1
+export CLO_ALLOW_TEST_NOW=1   # só os testes podem fixar o relógio (--now)
 pattern="${1:-}"
 total=0; failed=0
 

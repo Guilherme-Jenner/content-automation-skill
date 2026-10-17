@@ -29,3 +29,14 @@ test_orchestrator_hands_off_to_schedule_post() {
   assert_contains "$s" "export_package" "oferece o pacote manual"
   assert_contains "$s" "ainda não implementad" "continua honesta sobre geração e Katana"
 }
+
+test_schedule_skill_documents_recovery_and_fixed_log() {
+  local s; s=$(cat "$ROOT/skills/schedule-post/SKILL.md")
+  assert_contains "$s" "--approvals" "comando completo do schedule.sh"
+  assert_contains "$s" ".schedule-log.json" "log fixo ao lado do plano"
+  assert_contains "$s" "supersede" "como reagendar um post já agendado"
+  assert_contains "$s" "--conferido" "como liberar uma reserva órfã"
+  assert_contains "$s" "conferir no agendador" "antes de liberar, conferir no agendador"
+  assert_contains "$s" "--now" "proíbe --now fora dos testes"
+  assert_contains "$s" "procedimento" "diz que a aprovação é de procedimento, não criptográfica"
+}

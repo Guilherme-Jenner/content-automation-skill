@@ -65,7 +65,7 @@ def caminho_aprovacao(diretorio, post_id):
 def cmd_approve(args, now, force):
     plano_caminho, post_id, diretorio = args
     post = achar_post(plano_caminho, post_id)
-    erros = erros_do_plano(plano_caminho, now)
+    erros = erros_do_plano(plano_caminho, now, post_id)
     if erros:
         raise Recusa("o plano não está válido, nada foi aprovado:\n  " + "\n  ".join(erros))
     destino = caminho_aprovacao(diretorio, post_id)
@@ -94,8 +94,8 @@ def cmd_approve(args, now, force):
     print(f"aprovado: {post_id} ({post['data_hora']})")
 
 
-def cmd_verify(args):
-    plano_caminho, post_id, diretorio = args
+def verificar(plano_caminho, post_id, diretorio):
+    """Confere a aprovação; devolve (post, registro) ou levanta Recusa. Nunca aprova nada."""
     post = achar_post(plano_caminho, post_id)
     arq = caminho_aprovacao(diretorio, post_id)
     if not os.path.isfile(arq):
@@ -114,7 +114,12 @@ def cmd_verify(args):
         raise Recusa("o vídeo mudou depois da aprovação; peça uma nova aprovação")
     if sha256_conteudo(post) != reg.get("sha256_conteudo"):
         raise Recusa("o conteúdo (legenda, hashtags, perfis ou data/hora) mudou depois da aprovação; peça uma nova aprovação")
-    print(f"aprovação válida: {post_id}")
+    return post, reg
+
+
+def cmd_verify(args):
+    verificar(*args)
+    print(f"aprovação válida: {args[1]}")
 
 
 def main(argv):

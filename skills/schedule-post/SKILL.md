@@ -48,7 +48,20 @@ A aprovação fica amarrada ao hash do vídeo, da legenda, das hashtags, dos per
   bash "${CLAUDE_PLUGIN_ROOT}/scripts/export_package.sh" "<schedule-plan.json>" <post-id> "<pasta de saída>"
   ```
   Entrega o vídeo, `legenda.txt`, `horario.txt` e `COMO-AGENDAR.md`. O usuário agenda no app.
-- **Ensaio com o agendador `fake`:** `schedule.sh ... --scheduler fake` apenas simula (não grava nada); com `--confirm` só registra no log local. Use `--confirm` somente depois de uma nova confirmação do usuário, e nunca apresente isso como um agendamento real.
+- **Ensaio com o agendador `fake`:**
+  ```bash
+  bash "${CLAUDE_PLUGIN_ROOT}/scripts/schedule.sh" "<schedule-plan.json>" <post-id> --approvals "<pasta de aprovações>" --scheduler fake
+  ```
+  Sem `--confirm` só simula (não grava nada). Com `--confirm` apenas registra no log local, que fica **sempre** em `.schedule-log.json` ao lado do plano (não existe opção para trocá-lo). Use `--confirm` somente depois de uma nova confirmação do usuário, e nunca apresente isso como um agendamento real. **Nunca use `--now`**: ele só existe nos testes; o prazo é sempre conferido contra a hora real.
+
+## 8. Mudar ou refazer um post
+- **Mudou a legenda, o horário, os perfis ou o vídeo depois de aprovar:** a aprovação deixa de valer; mostre de novo e peça um novo "aprovo".
+- **O post já estava agendado e mudou:** o sistema recusa agendar o novo sem tratar o antigo. Peça ao usuário para **cancelar o post antigo no agendador/app**, confirmar que cancelou e só então registrar a substituição: `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/schedule_log.py" supersede "<pasta do plano>/.schedule-log.json" <post-id>`. Depois aprove e agende o novo.
+- **Reserva `em_andamento` que ficou presa** (um processo caiu): antes de liberar, **conferir no agendador** (app) se o post foi criado. Só se nada foi criado, libere com `schedule_log.py release <plano> <post-id> <log> --conferido`. Se o post foi criado, não libere: registre com `commit` o id que o agendador mostrar.
+- Um post com horário vencido não impede os demais posts do plano; ele só não pode ser aprovado nem agendado.
+
+## Limite desta aprovação
+A aprovação é um controle de **procedimento**: protege contra mudanças acidentais e contra agendar algo diferente do que o usuário viu, mas não é uma assinatura criptográfica (quem editar os arquivos à mão consegue forjá-la). Por isso a regra de pedir o "aprovo" ao usuário vale sempre.
 
 ## Regras
 - Nunca agende nem publique sem aprovação explícita do usuário, por post.
