@@ -6,6 +6,7 @@ data_hora fora do formato AAAA-MM-DDTHH:MM:SS-03:00, a menos de 15 minutos de ag
 perfis vazios ou duplicados; hashtags inválidas; legenda acima do limite.
 
 Uso: validate_schedule.py <schedule-plan.json> [--now <ISO com fuso>]
+Também importável: erros_do_plano(caminho, now) -> lista de mensagens.
 """
 import json
 import os
@@ -32,50 +33,57 @@ def agora(argv):
     return datetime.now(timezone.utc)
 
 
-def main(argv):
+def caminho_do_video(caminho_plano, video):
+    base = os.path.dirname(os.path.abspath(caminho_plano))
+    return video if os.path.isabs(video) else os.path.join(base, video)
+
+
+def erros_do_plano(caminho, now):
     with open(SCHEMA, encoding="utf-8") as f:
         schema = json.load(f)
-    caminho = argv[1]
     with open(caminho, encoding="utf-8") as f:
         plano = json.load(f)
-    base = os.path.dirname(os.path.abspath(caminho))
-    now = agora(argv)
     erros = []
     validar(plano, schema, "", erros)
-    if not erros:
-        vistos = set()
-        for i, p in enumerate(plano["posts"]):
-            nome = f"posts[{i}]"
-            if not ID_VALIDO.match(p["id"]):
-                erros.append(f"{nome}.id inválido: use só letras, números, _ e - (até 32 caracteres)")
-            if p["id"].lower() in vistos:
-                erros.append("ids de posts repetidos (maiúsculas e minúsculas contam como iguais)")
-            vistos.add(p["id"].lower())
-            video = p["video"] if os.path.isabs(p["video"]) else os.path.join(base, p["video"])
-            if not os.path.isfile(video):
-                erros.append(f"{nome}.video não encontrado: {p['video']}")
-            if not DATA_HORA.match(p["data_hora"]):
-                erros.append(f"{nome}.data_hora deve estar no formato AAAA-MM-DDTHH:MM:SS-03:00 (fuso America/Sao_Paulo)")
+    if erros:
+        return erros
+    vistos = set()
+    for i, p in enumerate(plano["posts"]):
+        nome = f"posts[{i}]"
+        if not ID_VALIDO.match(p["id"]):
+            erros.append(f"{nome}.id inválido: use só letras, números, _ e - (até 32 caracteres)")
+        if p["id"].lower() in vistos:
+            erros.append("ids de posts repetidos (maiúsculas e minúsculas contam como iguais)")
+        vistos.add(p["id"].lower())
+        if not os.path.isfile(caminho_do_video(caminho, p["video"])):
+            erros.append(f"{nome}.video não encontrado: {p['video']}")
+        if not DATA_HORA.match(p["data_hora"]):
+            erros.append(f"{nome}.data_hora deve estar no formato AAAA-MM-DDTHH:MM:SS-03:00 (fuso America/Sao_Paulo)")
+        else:
+            try:
+                dt = datetime.fromisoformat(p["data_hora"])
+            except ValueError:
+                erros.append(f"{nome}.data_hora não é uma data válida: {p['data_hora']}")
             else:
-                try:
-                    dt = datetime.fromisoformat(p["data_hora"])
-                except ValueError:
-                    erros.append(f"{nome}.data_hora não é uma data válida: {p['data_hora']}")
-                else:
-                    if dt < now + MARGEM_MINIMA:
-                        erros.append(f"{nome}.data_hora deve estar a pelo menos 15 minutos do momento atual")
-                    elif dt > now + ANTECEDENCIA_MAXIMA:
-                        erros.append(f"{nome}.data_hora deve estar a no máximo 30 dias à frente")
-            perfis = [(x["rede"], x["conta"].strip().lower()) for x in p["perfis"]]
-            if len(set(perfis)) != len(perfis):
-                erros.append(f"{nome}.perfis tem perfil duplicado")
-            if any(not conta for _, conta in perfis):
-                erros.append(f"{nome}.perfis tem conta vazia")
-            for h in p["hashtags"]:
-                if not re.match(r"^#\S+$", h):
-                    erros.append(f"{nome}.hashtag inválida: '{h}' (comece com # e não use espaços)")
-            if len(p["legenda"]) > LIMITE_LEGENDA:
-                erros.append(f"{nome}.legenda tem {len(p['legenda'])} caracteres (limite configurado: {LIMITE_LEGENDA}; conferir na rede)")
+                if dt < now + MARGEM_MINIMA:
+                    erros.append(f"{nome}.data_hora deve estar a pelo menos 15 minutos do momento atual")
+                elif dt > now + ANTECEDENCIA_MAXIMA:
+                    erros.append(f"{nome}.data_hora deve estar a no máximo 30 dias à frente")
+        perfis = [(x["rede"], x["conta"].strip().lower()) for x in p["perfis"]]
+        if len(set(perfis)) != len(perfis):
+            erros.append(f"{nome}.perfis tem perfil duplicado")
+        if any(not conta for _, conta in perfis):
+            erros.append(f"{nome}.perfis tem conta vazia")
+        for h in p["hashtags"]:
+            if not re.match(r"^#\S+$", h):
+                erros.append(f"{nome}.hashtag inválida: '{h}' (comece com # e não use espaços)")
+        if len(p["legenda"]) > LIMITE_LEGENDA:
+            erros.append(f"{nome}.legenda tem {len(p['legenda'])} caracteres (limite configurado: {LIMITE_LEGENDA}; conferir na rede)")
+    return erros
+
+
+def main(argv):
+    erros = erros_do_plano(argv[1], agora(argv))
     for e in erros:
         print(e, file=sys.stderr)
     return 1 if erros else 0
