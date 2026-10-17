@@ -32,7 +32,7 @@ Use a skill `research-trends` (dados reais, com fontes) e depois `script-storybo
 Depois use a skill `edit-recorded` (modo gravado). Para o modo gerado, a edição das cenas geradas ainda não implementada nesta versão.
 
 ## 5. Agendamento e publicação
-O agendamento ainda não implementado nesta versão. Entregue os vídeos finais (`final-<id>.mp4` e `.srt`) e, se o usuário quiser, sugira legenda do post e horários com base na pesquisa; ele agenda direto no Instagram/TikTok. **Nunca publique nem agende sem aprovação explícita do usuário.**
+Use a skill `schedule-post`: legenda, hashtags, dias e horários, validação e **aprovação por post** (amarrada ao conteúdo exato). Os agendadores reais (MCP) ainda não implementados nesta versão: a entrega de verdade é o **pacote manual** (`export_package.sh`: vídeo, legenda, horário e passo a passo), que o usuário agenda no próprio Instagram/TikTok. O agendador `fake` serve só para ensaio e não agenda nada de verdade. **Nunca publique nem agende sem aprovação explícita do usuário.**
 
 ## Regras
 - Aprovação humana é obrigatória: do roteiro, dos cortes criativos, **de cada variante** e, no futuro, de data/hora e legenda antes de agendar.

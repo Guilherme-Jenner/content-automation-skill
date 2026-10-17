@@ -8,7 +8,8 @@ Plugin do Claude Code: skills (instruções para o Claude) + scripts (bash + ffm
 | `content-pipeline` | Orquestradora; é a única que o usuário invoca |
 | `research-trends` | Pesquisa na web com fontes → `research.json` |
 | `script-storyboard` | Hook, roteiro, storyboard (gerado) ou shot list (gravado) |
-| `edit-recorded` | Edição do vídeo gravado, com aprovação dos cortes |
+| `edit-recorded` | Edição do vídeo gravado, com aprovação dos cortes e variantes |
+| `schedule-post` | Legenda, horários e aprovação por hash; entrega pelo pacote manual |
 
 Fases seguintes: `edit-generated`, `generate-clips` (Higgsfield + teto), `schedule-post` (aprovação por hash), e por último o polimento visual com Remotion.
 
@@ -23,3 +24,6 @@ Fases seguintes: `edit-generated`, `generate-clips` (Higgsfield + teto), `schedu
 - Serviços externos ficam atrás de uma porta com versão falsa; nenhum teste chama serviço pago.
 - Pesquisa: afirmação sem fonte vira hipótese (`check_research.py`).
 - Windows é ambiente de desenvolvimento; o destino é Mac. Para rodar os testes: `bash tests/run.sh`.
+
+## Agendamento (Fase 2)
+`validate_schedule.py` → `propose_slots.py` (cadência) → `approval.py approve|verify` (hash de vídeo, legenda, hashtags, perfis e horário) → `schedule.sh` (simula por padrão; `--confirm` com aprovação válida; idempotente via `schedule_log.py`) com o agendador `fake`. Agendadores reais por MCP ainda não existem; o plano B é `export_package.sh`. Fuso fixo `-03:00` (Brasil sem horário de verão desde 2019).
