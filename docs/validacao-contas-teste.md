@@ -6,15 +6,24 @@ Legenda: **Não gasta crédito e não publica** = só leitura ou local. **Exige 
 
 ---
 
-## Parte A. Escolha do agendador (Metricool como primeira tentativa)
+## Situação atual (informada pelo usuário em 2026-10-17)
+O sócio **não usa nenhuma ferramenta de agendamento**: ele posta o vídeo normalmente, direto nas redes. O objetivo do projeto é justamente começar a automatizar a geração e a postagem. Consequências:
 
-### Por que o Metricool primeiro
+1. **Não há ferramenta existente para preferir.** O critério "usar a que ele já paga" não se aplica; a escolha de um agendador, se houver, é uma decisão nova (e um custo novo) para a CLO.
+2. **O caminho que já funciona hoje, sem conta nova e sem custo, é o pacote manual** (`export_package.sh`: vídeo, legenda, horário e passo a passo). O Instagram e o TikTok têm agendamento nativo (regras a conferir no app), então o sócio já ganha o "horário certo" sem ferramenta extra. A automação cobre tudo até a entrega do pacote.
+3. **Adotar um agendador por MCP é um passo opcional**, que só se paga se o ganho de automatizar o último clique compensar o custo e o trabalho extra (o Metricool, por exemplo, exige o vídeo em URL pública, o que significa hospedar o arquivo). Recomendação: **operar algumas semanas com o pacote manual** e decidir depois, com dados de uso.
+
+Por isso a Parte A abaixo é **opcional**; a Parte B (Katana) e o uso do pacote manual não dependem dela.
+
+## Parte A (opcional). Validar um agendador (Metricool como primeira tentativa)
+
+### Por que o Metricool, se um dia for adotado
 - É o MCP **oficial** do fornecedor, lista agendamento para Instagram (Reels) e TikTok, e a documentação diz que funciona em qualquer plano, inclusive o grátis (não verificado). Fontes e ressalvas em `docs/agendadores.md`.
 - **Limitação que muda o desenho:** o Metricool pede o vídeo por **URL pública** (link direto). Não aceita arquivo local nem anexo no chat. Então o fluxo precisa de um passo de hospedagem do vídeo, e isso é publicar o arquivo em algum lugar.
-- Critério de decisão que vale mais que qualquer comparação: **usar a ferramenta que o seu sócio já paga**. Se ele já usa outra (Planoly, por exemplo), valide essa em vez do Metricool.
+- Como o sócio **não usa ferramenta nenhuma**, o Metricool é só o ponto de partida mais barato para testar (plano grátis, MCP oficial); não há ferramenta "já paga" a preferir. Se um dia a CLO escolher outra, o roteiro abaixo vale igual, trocando o nome.
 
 ### Passos
-1. **Decidir o candidato.** Não gasta crédito e não publica. Você me diz o que o sócio já usa e paga hoje (ver "Perguntas para você").
+1. **Decidir o candidato.** Não gasta crédito e não publica. O sócio não usa nenhuma ferramenta hoje; a decisão de adotar uma é da CLO (ver "Situação atual" e "Perguntas para você").
 2. **Criar a conta de teste do agendador** (plano grátis, se existir). Exige a sua autorização, porque é criar conta e aceitar termos; eu não crio contas nem aceito termos por você.
 3. **Conectar uma conta de teste de Instagram e uma de TikTok** (perfis descartáveis, nunca os reais do sócio). Exige a sua autorização: o login é seu.
 4. **Instalar o MCP do agendador no Claude Code** seguindo a página oficial. Exige a sua autorização, porque dá a uma ferramenta acesso à conta.
@@ -57,8 +66,8 @@ Saldo antes/depois, o que o Katana fez de fato (cortes? geração?), tempo, se o
 ---
 
 ## Perguntas para você
-1. **Qual ferramenta de agendamento o seu sócio já paga ou usa?** (Metricool, Planoly, outra, nenhuma). Isso decide o candidato.
-2. **Vocês têm perfis de teste** de Instagram e de TikTok, ou preferem que eu monte o roteiro de criação deles?
-3. **Onde hospedar o vídeo de teste** como link público temporário? (Drive com "qualquer pessoa com o link", outro serviço, ou prefere pular a hospedagem e testar só a leitura das ferramentas.)
-4. **Quer incluir o Katana no teste agora** (passos 5 a 8, com teto de 0 crédito) ou só depois do agendador?
+1. ~~Qual ferramenta de agendamento o sócio já usa?~~ **Respondida: nenhuma** (ele posta manualmente). Nova pergunta: **vocês querem adotar um agendador agora, ou operar algumas semanas com o pacote manual e decidir depois?** (recomendado: o pacote manual primeiro).
+2. **Vocês têm perfis de teste** de Instagram e de TikTok, ou preferem que eu monte o roteiro de criação deles? (só necessário se a Parte A for adiante)
+3. **Onde hospedar o vídeo de teste** como link público temporário? (só necessário se a Parte A for adiante)
+4. **Quer incluir o Katana no teste agora** (Parte B, passos 5 a 8, com teto de 0 crédito)? Ele não depende do agendador.
 5. **Qual clipe de teste** posso usar (sem rosto e sem dado do app)?
