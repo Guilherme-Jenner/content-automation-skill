@@ -21,7 +21,7 @@ Use a skill `research-trends` (dados reais, com fontes) e depois `script-storybo
 
 ## 3. Etapa do meio
 - **Modo gravado:** entregue a shot list e espere o usuário gravar. Peça o **caminho do arquivo** no disco.
-- **Modo gerado:** a geração de clipes (Higgsfield, com teto de créditos) ainda não implementada nesta versão. Diga isso ao usuário e pare aqui, entregando o storyboard com os prompts por cena.
+- **Modo gerado:** use a skill `generate-clips` (Higgsfield, cena a cena, sob um **teto de créditos** definido pelo usuário, com cotação, aprovação do total e registro de cada clipe). Ela monta os clipes em `video-gerado.mp4`. Avise que a **baixa automatizada** do resultado ainda não foi verificada com a conta real, e que as legendas e a trilha do modo gerado ainda não implementadas (a edição segue manual).
 
 ## 4. Edição: duas perguntas antes de começar
 1. **Qual editor?**
