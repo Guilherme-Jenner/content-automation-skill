@@ -73,3 +73,6 @@ Ferramentas (9): `createScheduledPost`, `createScheduledPostForReview`, `sendSch
 
 ### Consequência de arquitetura (executado pelo agente)
 O MCP é uma ferramenta do **agente**, não algo que um script bash consiga chamar. Então o adaptador do Metricool não pode ser um `schedulers/metricool.sh`. O desenho é: (1) um script monta o payload exato a partir do **snapshot aprovado** (o mesmo que o `reserve` entrega ao agendador falso); (2) a chamada a `createScheduledPost` é **executado pelo agente**, com esse payload e nada mais; (3) o resultado (`plannerUrl`/id) volta ao log com `commit` (ou `release` se falhar). O `schedule.sh` ganha um modo em que apenas reserva e imprime o payload, sem chamar agendador. Isso fica registrado como a **Fase 2b**.
+
+### Primeira chamada real (somente leitura): `getBrandSettings` (2026-10-17)
+Chamada na conta de teste, sem nenhuma rede conectada. Resultado: **erro** dizendo que a marca ainda não tem nenhuma rede conectada e apontando para a tela de conexões do Metricool (o `blogId` da marca de teste aparece no link). Ou seja, enquanto nenhuma rede for conectada não dá para ver o fuso, as redes nem usar as outras ferramentas. Nenhuma outra ferramenta foi chamada; nada foi agendado nem publicado.
