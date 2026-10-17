@@ -33,7 +33,7 @@ EOP
     else
       ffmpeg -v error -y -f lavfi -i "color=c=$cor:size=480x854:rate=25:duration=$dur" -c:v libx264 -pix_fmt yuv420p -an "$d/w/clips/$id.mp4" </dev/null
     fi
-    python3 "$ROOT/scripts/clips_manifest.py" add "$d/w/clips-manifest.json" "$id" "clips/$id.mp4" 1 "clip-$id-x" fake >/dev/null
+    python3 "$ROOT/scripts/clips_manifest.py" add "$d/w/clips-manifest.json" "$id" "clips/$id.mp4" 1 "$(python3 "$ROOT/scripts/genplan_info.py" "$d/g.json" key "$id")" fake >/dev/null
   done
 }
 
@@ -89,7 +89,7 @@ test_audio_is_kept_when_all_clips_have_it() {
 test_mixed_audio_and_silent_clips_are_refused() {
   local d out; d="$(mktemp -d)"; _prep "$d" sim
   ffmpeg -v error -y -f lavfi -i "color=c=green:size=480x854:rate=25:duration=5" -c:v libx264 -pix_fmt yuv420p -an "$d/w/clips/c2.mp4" </dev/null
-  python3 "$ROOT/scripts/clips_manifest.py" add "$d/w/clips-manifest.json" c2 clips/c2.mp4 1 clip-c2-x fake >/dev/null
+  python3 "$ROOT/scripts/clips_manifest.py" add "$d/w/clips-manifest.json" c2 clips/c2.mp4 1 "$(python3 "$ROOT/scripts/genplan_info.py" "$d/g.json" key c2)" fake >/dev/null
   out=$(_as "$d/g.json" "$d/w/clips-manifest.json" "$d/final.mp4" 2>&1) && _fail "clipes com e sem áudio misturados aceitos"
   assert_contains "$out" "áudio" "mensagem"
   rm -rf "$d"

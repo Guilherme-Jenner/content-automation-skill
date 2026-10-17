@@ -18,6 +18,8 @@ PY
   _bg init "$1/b.json" "$2" >/dev/null
 }
 _pl() { local d="$1"; shift; _gc "$d/g.json" "$d/w" --generator mcp-agent "$@"; }
+# emite o payload de geração (marca a cena como "emitida"); o register exige isso
+_emit() { _pl "$1" --stage payload --scene "$2" --budget "$1/b.json" >/dev/null 2>&1; }
 # registra a cotação que o agente obteve com get_cost
 _rq() { _pl "$1" --stage register-quote --scene "$2" --custo "$3" --budget "$1/b.json"; }
 # clipe de teste com a duração dada
@@ -71,6 +73,7 @@ test_register_valid_clip_spends_and_updates_the_manifest() {
   local d; d="$(mktemp -d)"; _prep "$d" 100
   _rq "$d" c1 4 >/dev/null; _rq "$d" c2 5 >/dev/null; _bg confirm "$d/b.json" 9 >/dev/null 2>&1
   _clip "$d/baixado.mp4" 4
+  _emit "$d" c1
   _pl "$d" --stage register --scene c1 --job-id "$UUID" --custo 4 --arquivo "$d/baixado.mp4" --budget "$d/b.json" >/dev/null 2>&1 || _fail "register falhou"
   assert_file_exists "$d/w/clips/c1.mp4"
   assert_contains "$(_bg status "$d/b.json")" "gasto: 4" "gasto"
@@ -82,6 +85,7 @@ test_register_valid_clip_spends_and_updates_the_manifest() {
 test_register_without_confirmation_is_refused() {
   local d out; d="$(mktemp -d)"; _prep "$d" 100; _rq "$d" c1 4 >/dev/null
   _clip "$d/baixado.mp4" 4
+  _emit "$d" c1
   out=$(_pl "$d" --stage register --scene c1 --job-id "$UUID" --custo 4 --arquivo "$d/baixado.mp4" --budget "$d/b.json" 2>&1) && _fail "register sem confirmação aceito"
   assert_contains "$out" "confirm" "mensagem"
   [ ! -e "$d/w/clips/c1.mp4" ] || _fail "não deveria copiar o clipe"
@@ -108,7 +112,7 @@ test_register_rejects_invalid_files_job_ids_and_short_clips() {
 
 test_register_over_quote_records_the_overrun() {
   local d rc; d="$(mktemp -d)"; _prep "$d" 100
-  _rq "$d" c1 4 >/dev/null; _bg confirm "$d/b.json" 4 >/dev/null 2>&1; _clip "$d/baixado.mp4" 4
+  _rq "$d" c1 4 >/dev/null; _bg confirm "$d/b.json" 4 >/dev/null 2>&1; _clip "$d/baixado.mp4" 4; _emit "$d" c1
   _pl "$d" --stage register --scene c1 --job-id "$UUID" --custo 9 --arquivo "$d/baixado.mp4" --budget "$d/b.json" >/dev/null 2>&1; rc=$?
   [ "$rc" -ne 0 ] || _fail "estouro deveria sair com código diferente de zero"
   assert_contains "$(_bg status "$d/b.json")" "gasto: 9" "gasto efetivo registrado"
@@ -119,7 +123,7 @@ test_register_over_quote_records_the_overrun() {
 
 test_register_twice_or_over_an_existing_clip_is_refused() {
   local d out; d="$(mktemp -d)"; _prep "$d" 100
-  _rq "$d" c1 4 >/dev/null; _bg confirm "$d/b.json" 4 >/dev/null 2>&1; _clip "$d/baixado.mp4" 4
+  _rq "$d" c1 4 >/dev/null; _bg confirm "$d/b.json" 4 >/dev/null 2>&1; _clip "$d/baixado.mp4" 4; _emit "$d" c1
   mkdir -p "$d/w/clips"; echo existente > "$d/w/clips/c1.mp4"
   out=$(_pl "$d" --stage register --scene c1 --job-id "$UUID" --custo 4 --arquivo "$d/baixado.mp4" --budget "$d/b.json" 2>&1) && _fail "sobrescreveu clipe existente"
   assert_contains "$out" "--force" "mensagem"

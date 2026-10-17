@@ -45,3 +45,21 @@ test_orchestrator_uses_generate_clips() {
   assert_contains "$s" "teto" "teto de gastos"
   assert_contains "$s" "ainda não implementad" "continua honesta sobre o que falta"
 }
+
+test_generate_skill_explains_the_effective_cost_and_what_was_never_tested() {
+  local s; s=$(cat "$ROOT/skills/generate-clips/SKILL.md")
+  assert_contains "$s" "balance" "custo efetivo pela diferença de saldo"
+  assert_contains "$s" "transactions" "ou pelas transações"
+  assert_contains "$s" "nunca repita a cotação" "não copiar a cotação como se fosse o custo efetivo"
+  assert_contains "$s" "nenhuma chamada real" "diz que nenhuma chamada real ao Higgsfield foi feita"
+  assert_contains "$s" "context" "formato do payload não validado"
+  assert_contains "$s" "UUID" "formato do job_id não validado"
+}
+
+test_generate_skill_documents_the_one_shot_payload_and_the_ceiling_exits() {
+  local s; s=$(cat "$ROOT/skills/generate-clips/SKILL.md")
+  assert_contains "$s" "--reemitir" "reemissão só depois de conferir o job"
+  assert_contains "$s" "raise" "aumentar o teto é decisão do usuário"
+  assert_contains "$s" "drop" "descartar itens"
+  assert_contains "$s" "ultrapass" "depois de um estouro nada novo é gerado sem decisão do usuário"
+}

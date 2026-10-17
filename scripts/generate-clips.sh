@@ -24,7 +24,7 @@ here="$(cd "${BASH_SOURCE[0]%/*}" && pwd)"
 
 [ $# -ge 2 ] || die "uso: generate-clips.sh <gen-plan> <diretorio> --stage <estágio> --generator fake|mcp-agent [--budget <arquivo>] [--force]"
 plan="$(abspath "$1")"; work="$(abspath "$2")"; shift 2
-budget=""; stage=""; generator=""; force=0; scene=""; jobid=""; custo_arg=""; arquivo=""; cost_only=0
+budget=""; stage=""; generator=""; force=0; scene=""; jobid=""; custo_arg=""; arquivo=""; cost_only=0; reemitir=0
 while [ $# -gt 0 ]; do
   case "$1" in
     --budget) [ $# -ge 2 ] || die "--budget exige o arquivo de orçamento"; budget="$(abspath "$2")"; shift 2 ;;
@@ -35,6 +35,7 @@ while [ $# -gt 0 ]; do
     --custo) [ $# -ge 2 ] || die "--custo exige um número"; custo_arg="$2"; shift 2 ;;
     --arquivo) [ $# -ge 2 ] || die "--arquivo exige o caminho do clipe baixado"; arquivo="$(abspath "$2")"; shift 2 ;;
     --cost-only) cost_only=1; shift ;;
+    --reemitir) reemitir=1; shift ;;
     --force) force=1; shift ;;
     *) die "opção desconhecida: $1" ;;
   esac
@@ -71,7 +72,10 @@ if [ "$generator" = mcp-agent ]; then
       fi
       need_budget
       python3 "$here/budget.py" check "$budget" "$item" >/dev/null \
-        || die "cena $scene sem cotação confirmada: $(python3 "$here/budget.py" check "$budget" "$item" 2>&1 | sed 's/^recusado: //'). Cote (payload --cost-only + register-quote) e peça a confirmação do total"
+        || die "cena $scene não pode ser gerada agora: $(python3 "$here/budget.py" check "$budget" "$item" 2>&1 | sed 's/^recusado: //')"
+      # O payload de geração sai UMA vez por cena: um segundo envio poderia criar (e cobrar) um segundo job.
+      emitflag=""; [ "$reemitir" -eq 0 ] || emitflag="--reemitir"
+      saida="$(python3 "$here/budget.py" emit "$budget" "$item" $emitflag 2>&1)" || die "${saida#recusado: }"
       exec python3 "$here/genpayload.py" "$plan" "$scene"
       ;;
     register-quote)
@@ -85,26 +89,40 @@ if [ "$generator" = mcp-agent ]; then
     register)
       need_budget
       [[ "$jobid" =~ ^[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}$ ]] || die "--job-id deve ser o UUID do job devolvido pelo Higgsfield"
-      [ -n "$custo_arg" ] || die "informe o custo efetivo em --custo <n>"
+      [ -n "$custo_arg" ] || die "informe o custo efetivo em --custo <n> (obtenha pela diferença de balance antes/depois ou por transactions)"
+      python3 -c "import sys; sys.exit(0 if float(sys.argv[1]) > 0 else 1)" "$custo_arg" 2>/dev/null \
+        || die "o custo efetivo deve ser um número maior que zero (recebido '$custo_arg'); confira com balance/transactions"
       [ -f "$arquivo" ] || die "arquivo do clipe não encontrado: informe --arquivo <caminho do clipe baixado>"
-      probe_duration "$arquivo" >/dev/null
+      dur_real="$(probe_duration "$arquivo")"
       [ -n "$(ffprobe -v error -select_streams v -show_entries stream=codec_type -of csv=p=0 "$arquivo" 2>/dev/null)" ] || die "o arquivo não tem faixa de vídeo: $arquivo"
-      pedida="$(python3 "$here/genplan_info.py" "$plan" get "$scene" | cut -d' ' -f1)"
-      python3 -c "import sys; sys.exit(0 if float(sys.argv[1]) >= float(sys.argv[2]) - 1 else 1)" "$(probe_duration "$arquivo")" "$pedida" \
-        || die "a duração do clipe ($(probe_duration "$arquivo") s) é bem menor que a pedida ($pedida s); não será registrado"
-      python3 "$here/budget.py" check "$budget" "$item" >/dev/null \
-        || die "cena $scene sem cotação confirmada: $(python3 "$here/budget.py" check "$budget" "$item" 2>&1 | sed 's/^recusado: //')"
+      read -r pedida resolucao _audio _aspecto <<EOI
+$(python3 "$here/genplan_info.py" "$plan" get "$scene")
+EOI
+      python3 -c "import sys; sys.exit(0 if abs(float(sys.argv[1]) - float(sys.argv[2])) <= 1.0 else 1)" "$dur_real" "$pedida" \
+        || die "a duração do clipe ($dur_real s) difere da pedida ($pedida s) em mais de 1 s; não será registrado"
+      IFS=, read -r larg alt <<EOI
+$(ffprobe -v error -select_streams v:0 -show_entries stream=width,height -of csv=p=0 "$arquivo")
+EOI
+      case "$resolucao" in 480p) alt_min=854 ;; 720p) alt_min=1280 ;; *) alt_min=1920 ;; esac
+      python3 -c "import sys; w, h, m = map(float, sys.argv[1:4]); sys.exit(0 if abs(w / h - 0.5625) <= 0.03 and h >= 0.9 * m else 1)" "$larg" "$alt" "$alt_min" \
+        || die "a proporção/resolução do clipe (${larg}x${alt}) não corresponde ao plano (9:16, ${resolucao}); não será registrado"
       mkdir -p "$work/clips"
+      python3 "$here/clips_manifest.py" check-new "$work/clips-manifest.json" "$scene" "$arquivo" "$jobid" || die "o clipe não pode ser registrado nesta cena"
+      # Uma operação por cena de cada vez (check, cópia, gasto e manifesto formam uma unidade).
+      CURRENT_LOCK="$work/clips/.$scene.lock"
+      mkdir "$CURRENT_LOCK" 2>/dev/null || die "há outra operação registrando a cena $scene (ou uma anterior caiu): se tiver certeza de que nenhuma está rodando, apague $CURRENT_LOCK"
+      CURRENT_TMP=""
+      trap 'rm -rf "$CURRENT_LOCK"; [ -z "$CURRENT_TMP" ] || rm -f "$CURRENT_TMP"' EXIT
+      python3 "$here/budget.py" check "$budget" "$item" --ignorar-teto --exigir-emitido >/dev/null \
+        || die "cena $scene não pode ser registrada: $(python3 "$here/budget.py" check "$budget" "$item" --ignorar-teto --exigir-emitido 2>&1 | sed 's/^recusado: //')"
       refuse_existing "$work/clips/$scene.mp4" "$force"
-      tmp="$work/clips/.$scene.partial.mp4"
-      CURRENT_TMP="$tmp"
-      trap 'rm -f "$CURRENT_TMP"' EXIT
-      cp "$arquivo" "$tmp"
+      CURRENT_TMP="$(mktemp "$work/clips/.$scene.XXXXXX")"
+      cp "$arquivo" "$CURRENT_TMP"
       rc=0
       python3 "$here/budget.py" spend "$budget" "$item" "$custo_arg" || rc=$?
       if [ "$rc" -ne 0 ] && [ "$rc" -ne 3 ]; then exit "$rc"; fi
-      CURRENT_TMP=""   # o crédito foi consumido: o clipe é preservado
-      mv -f "$tmp" "$work/clips/$scene.mp4"
+      tmp="$CURRENT_TMP"; CURRENT_TMP=""   # o crédito foi consumido: o clipe é preservado
+      mv -f "$tmp" "$work/clips/$scene.mp4" || die "não foi possível mover o clipe pago; ele está em $tmp"
       python3 "$here/clips_manifest.py" add "$work/clips-manifest.json" "$scene" "clips/$scene.mp4" "$custo_arg" "$item" mcp-agent "$jobid" \
         || die "clipe pago e salvo em clips/$scene.mp4, mas NÃO registrado no manifesto"
       if [ "$rc" -eq 3 ]; then
@@ -126,7 +144,7 @@ if [ "$stage" = quote ]; then
   while IFS= read -r id; do
     item="$(item_of "$id")"
     case "$(state_of "$item")" in
-      confirmado|gasto) echo "já cotada e confirmada: cena $id"; continue ;;
+      confirmado|emitido|gasto) echo "já cotada e confirmada: cena $id"; continue ;;
     esac
     custo="$("$gen" quote "$plan" "$id" </dev/null)"
     python3 "$here/budget.py" quote "$budget" "$item" "$custo" >/dev/null

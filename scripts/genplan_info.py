@@ -11,6 +11,23 @@ import json
 import sys
 
 
+def chave_da_cena(plano, cena):
+    """Item de orçamento da cena: muda se qualquer coisa que altera custo ou resultado mudar."""
+    carga = json.dumps(
+        {
+            "prompt": cena["prompt"],
+            "modelo": plano["modelo"],
+            "duracao_s": cena["duracao_s"],
+            "resolucao": plano["resolucao"],
+            "audio": plano["audio"],
+            "aspecto": plano["aspecto"],
+        },
+        sort_keys=True,
+        ensure_ascii=False,
+    )
+    return f"clip-{cena['id']}-{hashlib.sha1(carga.encode('utf-8')).hexdigest()[:8]}"
+
+
 def main(argv):
     with open(argv[1], encoding="utf-8") as f:
         plano = json.load(f)
@@ -25,19 +42,7 @@ def main(argv):
         if modo == "get":
             linhas = [f"{cena['duracao_s']} {plano['resolucao']} {'sim' if plano['audio'] else 'nao'} {plano['aspecto']}"]
         else:
-            carga = json.dumps(
-                {
-                    "prompt": cena["prompt"],
-                    "modelo": plano["modelo"],
-                    "duracao_s": cena["duracao_s"],
-                    "resolucao": plano["resolucao"],
-                    "audio": plano["audio"],
-                    "aspecto": plano["aspecto"],
-                },
-                sort_keys=True,
-                ensure_ascii=False,
-            )
-            linhas = [f"clip-{cena['id']}-{hashlib.sha1(carga.encode('utf-8')).hexdigest()[:8]}"]
+            linhas = [chave_da_cena(plano, cena)]
     else:
         print(f"modo desconhecido: {modo}", file=sys.stderr)
         return 2

@@ -4,7 +4,10 @@
   clips_manifest.py add  <manifesto> <id> <arquivo-relativo> <custo> <item> <origem> [job_id]
   clips_manifest.py show <manifesto>      -> ids dos clipes, um por linha, em ordem alfabética
   clips_manifest.py verify <manifesto> <gen-plan>   -> caminhos dos clipes NA ORDEM DO PLANO, um por linha;
-                                          falha se faltar cena no manifesto, arquivo ou se o hash não bater
+                                          falha se faltar cena, arquivo, se o hash não bater ou se o clipe foi
+                                          gerado para outra versão do plano (prompt, duração, resolução, áudio)
+  clips_manifest.py check-new <manifesto> <id> <arquivo> <job_id>
+                                          falha se o job_id ou o conteúdo (sha256) já estiverem em OUTRA cena
 
 O arquivo é relativo à pasta do manifesto. O sha256 é calculado na hora do registro. Escrita atômica, com trava.
 """
@@ -18,6 +21,7 @@ from datetime import datetime, timezone
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from budget import travar  # noqa: E402
+from genplan_info import chave_da_cena  # noqa: E402
 
 ID_VALIDO = re.compile(r"^[A-Za-z0-9_-]{1,32}$")
 
@@ -94,9 +98,17 @@ def cmd_verify(manifesto, plano_caminho):
         if c is None:
             print(f"a cena '{cena['id']}' não está no manifesto: gere ou registre o clipe antes de montar", file=sys.stderr)
             return 1
+        if c.get("item") != chave_da_cena(plano, cena):
+            print(
+                f"o clipe da cena '{cena['id']}' foi gerado para outra versão do plano "
+                "(o prompt, a duração, a resolução ou o áudio mudou): gere a cena de novo",
+                file=sys.stderr,
+            )
+            return 1
         caminho = os.path.normpath(os.path.join(base, c["arquivo"]))
-        if not os.path.isfile(caminho):
-            print(f"o clipe da cena '{cena['id']}' não foi encontrado: {c['arquivo']}", file=sys.stderr)
+        base_real = os.path.realpath(base)
+        if not os.path.isfile(caminho) or not os.path.realpath(caminho).startswith(base_real + os.sep):
+            print(f"o clipe da cena '{cena['id']}' não foi encontrado dentro da pasta do manifesto: {c['arquivo']}", file=sys.stderr)
             return 1
         if sha256(caminho) != c["sha256"]:
             print(f"o clipe da cena '{cena['id']}' mudou depois do registro (hash diferente do manifesto)", file=sys.stderr)
@@ -106,8 +118,24 @@ def cmd_verify(manifesto, plano_caminho):
     return 0
 
 
+def cmd_check_new(manifesto, cid, arquivo, job_id):
+    with travar(manifesto):
+        dados = carregar(manifesto)
+    h = sha256(arquivo)
+    for outro, c in dados["clips"].items():
+        if outro == cid:
+            continue
+        if c.get("job_id") and c["job_id"] == job_id:
+            print(f"o job {job_id} já está registrado na cena '{outro}'", file=sys.stderr)
+            return 1
+        if c["sha256"] == h:
+            print(f"este arquivo é idêntico ao clipe da outra cena '{outro}'", file=sys.stderr)
+            return 1
+    return 0
+
+
 def main(argv):
-    if len(argv) < 3 or argv[1] not in ("add", "show", "verify"):
+    if len(argv) < 3 or argv[1] not in ("add", "show", "verify", "check-new"):
         print(__doc__, file=sys.stderr)
         return 2
     if argv[1] == "add" and 7 <= len(argv) - 0 <= 9:
@@ -116,6 +144,8 @@ def main(argv):
         return cmd_show(argv[2])
     if argv[1] == "verify" and len(argv) == 4:
         return cmd_verify(argv[2], argv[3])
+    if argv[1] == "check-new" and len(argv) == 6:
+        return cmd_check_new(*argv[2:])
     print(__doc__, file=sys.stderr)
     return 2
 

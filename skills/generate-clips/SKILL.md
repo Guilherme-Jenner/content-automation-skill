@@ -8,7 +8,10 @@ description: Gera os clipes de um storyboard do modo gerado no Higgsfield, cena 
 Converse em português do Brasil, uma pergunta por vez. **Nada consome crédito sem cotação, aprovação do total e teto.** Aqui quem chama o Higgsfield é você (o agente); os scripts montam o payload exato e registram o resultado.
 
 ## O que não está validado (diga isso ao usuário)
+**Até agora, nenhuma chamada real de geração ao Higgsfield foi feita.** Tudo abaixo é leitura de documentação e testes com um gerador falso:
 - A **baixa automatizada** do vídeo pronto (a URL que o `jobs_wait` devolve) é **não verificado**. Se falhar, peça ao usuário para baixar o clipe no Higgsfield e informar o caminho do arquivo.
+- O formato do payload (o campo `context` e os parâmetros do modelo), o formato da resposta de `get_cost` e o `job_id` ser um UUID são suposições não validadas.
+- O **custo efetivo** de um job só é conhecido depois da geração; veja a regra no passo 6.
 - Os limites de duração (4 a 30 s inteiros no `seedance_2_5`) e os custos vêm da leitura de `models_explore` e de `get_cost`; confira sempre com `get_cost` antes de gerar.
 
 ## 1. Entradas
@@ -54,14 +57,14 @@ Sem execução em paralelo, a menos que o usuário peça e o teto comporte. Para
    ```bash
    bash "${CLAUDE_PLUGIN_ROOT}/scripts/generate-clips.sh" "<gen-plan.json>" "<pasta de trabalho>" --generator mcp-agent --stage payload --scene <id> --budget "<budget.json>"
    ```
-   Envie o JSON **sem alterar nada** a `generate_video` e guarde o `job_id`.
-2. **Se a chamada der timeout, não reenvie**: o resultado da submissão é desconhecido. Reaproveite o `job_id` ou confira o job antes de qualquer nova tentativa.
+   Envie o JSON **sem alterar nada** a `generate_video` e guarde o `job_id`. O payload de geração de uma cena **sai uma única vez** (o orçamento marca a cena como emitida): um segundo envio poderia criar e cobrar um segundo job.
+2. **Se a chamada der timeout, não reenvie**: o resultado da submissão é desconhecido. Reaproveite o `job_id` ou confira o job antes de qualquer nova tentativa. Só se tiver conferido que nenhum job foi criado, peça o payload de novo com `--reemitir`.
 3. Espere com `jobs_wait` até o job terminar. Baixe o resultado para um arquivo local (baixa automatizada: não verificado).
-4. Registre o clipe e o gasto efetivo:
+4. Descubra o **custo efetivo**: compare o `balance` antes e depois do job (ou use `transactions`) e **nunca repita a cotação** como se fosse o custo efetivo, senão um estouro nunca seria detectado. Se não conseguir determinar o custo, diga isso ao usuário e registre a cotação marcando como não verificado. Registre o clipe e o gasto efetivo:
    ```bash
    bash "${CLAUDE_PLUGIN_ROOT}/scripts/generate-clips.sh" "<gen-plan.json>" "<pasta de trabalho>" --generator mcp-agent --stage register --scene <id> --job-id <uuid do job> --custo <custo efetivo> --arquivo "<clipe baixado>" --budget "<budget.json>"
    ```
-5. Se o registro terminar com **estouro** (código 3: o custo efetivo passou da cotação), o gasto já ficou registrado: **pare o lote** e converse com o usuário antes da próxima cena.
+5. Se o registro terminar com **estouro** (código 3: o custo efetivo passou da cotação), o gasto já ficou registrado: **pare o lote** e converse com o usuário. Depois de um estouro os compromissos podem ultrapassar o teto, e então o sistema **recusa gerar qualquer cena nova** até uma decisão do usuário: aumentar o teto (`budget.py raise "<budget.json>" <novo teto>`, só com o "aprovo" dele) ou descartar cenas ainda não geradas (`budget.py drop`) e cotar de novo.
 6. Variantes já pagas não são cobradas de novo: ao retomar, pule as cenas já registradas.
 
 ## 7. Montar o vídeo
