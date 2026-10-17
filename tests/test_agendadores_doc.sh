@@ -28,3 +28,14 @@ test_doc_has_a_validation_checklist_with_the_key_questions() {
   assert_contains "$s" "perfis" "pergunta sobre os perfis do sócio"
   assert_contains "$s" "conta de teste" "valida em conta de teste"
 }
+
+test_doc_records_the_real_metricool_tool_contracts() {
+  local s; s=$(cat "$DOC")
+  assert_contains "$s" "createScheduledPost" "ferramenta de agendamento real"
+  assert_contains "$s" "autoPublish" "publicação automática x notificação no celular"
+  assert_contains "$s" "SELF_ONLY" "privacidade do TikTok para teste seguro"
+  assert_contains "$s" "isAigc" "declaração de conteúdo gerado por IA (TikTok)"
+  assert_contains "$s" "isAiGenerated" "declaração de conteúdo gerado por IA (Instagram)"
+  assert_contains "$s" "não há ferramenta de cancelar" "não existe cancelar entre as ferramentas"
+  assert_contains "$s" "executado pelo agente" "o MCP é chamado pelo agente, não pelo bash"
+}
