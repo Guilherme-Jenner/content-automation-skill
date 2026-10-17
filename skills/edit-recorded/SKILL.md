@@ -38,6 +38,23 @@ bash "${CLAUDE_PLUGIN_ROOT}/scripts/edit-recorded.sh" "<caminho do video>" "<dir
 ```
 Resultado: `final.mp4` (9:16, áudio normalizado, legenda queimada) e `final.srt`. Mostre o caminho ao usuário e peça a avaliação; ajustes voltam ao passo 2. Para refazer, use `--force`.
 
+## 5. Várias versões do mesmo bruto (variantes)
+Quando o usuário quiser mais de um vídeo final (de 1 a 5; o editor é `local`), em vez de um único `cut-plan.json` use um `variants-plan.json` no diretório de trabalho (formato em `schemas/variants-plan.schema.json`). Rode antes o `propose` para obter `transcript.json`. Cada variante tem `tipo`:
+- `trecho_diferente`: mostra outra parte do bruto;
+- `mesmo_trecho_edicao_diferente`: mesma parte, com edição diferente (ritmo dos cortes, estilo de legenda, gancho).
+
+Regras da proposta:
+- Cada variante tem um **gancho distinto**, ligado a um achado de `research.json` (campo `achados`). Se, na quantidade pedida, não houver outro gancho bom o bastante, repita um gancho: marque `gancho_repetido: true`, escreva `justificativa_gancho`, **diga isso ao usuário** e varie o restante (ritmo, trechos, legenda).
+- Não proponha variantes quase idênticas; prefira trechos diferentes ou ritmos claramente diferentes.
+- Valide antes de mostrar: `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/validate_variants.py" "<diretorio de trabalho>/variants-plan.json"`.
+- Mostre cada variante em linguagem simples (trechos, gancho, ritmo, legenda, duração final). **Aprovação é por variante**: só marque `aprovada: true` na que o usuário confirmar; cada variante é aprovada separadamente.
+
+Aplicação:
+```bash
+bash "${CLAUDE_PLUGIN_ROOT}/scripts/edit-recorded.sh" "<caminho do video>" "<diretorio de trabalho>" --stage apply --variants "<diretorio de trabalho>/variants-plan.json"
+```
+Gera `final-<id>.mp4` e `.srt` para cada variante aprovada e relata concluídas, puladas e falhas. O editor `katana` ainda não implementado: se o plano pedir `katana`, ofereça `local`.
+
 ## Regras
 - Nunca invente fonte ou dado. Se a pesquisa falhar, diga e trabalhe com hipóteses marcadas.
 - O vídeo original nunca é modificado.
