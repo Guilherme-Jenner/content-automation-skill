@@ -17,7 +17,11 @@ pesquisa → roteiro/hook → [modo] → bruto → edição (editor + N vídeos)
 Pergunte (ou deduza do pedido e confirme em uma frase): o vídeo será **gerado** (clipes criados por IA) ou **gravado** (o usuário grava)? Se o usuário já tem um vídeo gravado e só quer editar, vá direto ao passo 4 com o caminho do arquivo.
 
 ## 1b. Teto de gastos (opcional)
-Ao iniciar, pergunte: "Quer definir um **teto de créditos** para esta produção? É opcional." O usuário escolhe um valor ou prefere **não ter teto** (`sem-teto`). Guarde a resposta e use-a em tudo que consome crédito (`generate-clips`, e o editor `katana` quando existir): ela vira o argumento de `budget.py init` (`<teto>` ou `sem-teto`).
+Quase ninguém sabe quanto custa um clipe, então **antes de perguntar**, mostre a tabela de referência (qualidade x duração -> créditos e valor aproximado):
+```bash
+python3 "${CLAUDE_PLUGIN_ROOT}/scripts/reference_table.py" --duracoes 5,10,15,30
+```
+Se o usuário quiser ver em reais, pergunte a **cotação do dólar** que ele usa e rode de novo com `--cotacao-dolar <valor>` (nunca invente a cotação). Explique que o valor em dinheiro é aproximado e que o preço exato é cotado com `get_cost` (sem cobrar nada) antes de gerar. Ajude a escolher com exemplos da tabela (por exemplo, um vídeo de 15 s a 720p). Os dados (`data/precos-higgsfield.json`) têm a data da consulta: se estiverem velhos, avise e confirme com uma cotação `get_cost`. Depois pergunte: "Quer definir um **teto de créditos** para esta produção? É opcional." O usuário escolhe um valor ou prefere **não ter teto** (`sem-teto`). Guarde a resposta e use-a em tudo que consome crédito (`generate-clips`, e o editor `katana` quando existir): ela vira o argumento de `budget.py init` (`<teto>` ou `sem-teto`).
 - **Com teto:** nada passa dele; estouro é registrado e interrompe o lote.
 - **Sem teto:** o custo continua sendo **estimado antes, mostrado como total e só segue com a confirmação do usuário**; apenas não há limite máximo. O usuário pode definir um teto depois (`budget.py raise`).
 - O modo gravado com editor `local` não gasta crédito e não precisa dessa pergunta.

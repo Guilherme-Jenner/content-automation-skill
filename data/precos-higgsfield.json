@@ -1,0 +1,13 @@
+{
+  "consultado_em": "2026-10-18",
+  "modelo": "seedance_2_5",
+  "modo": "texto para vídeo, 9:16, sem áudio gerado",
+  "creditos_por_segundo": {"480p": 3, "720p": 7, "1080p": 16},
+  "observacoes": [
+    "Cotado com get_cost (não cria job nem cobra): 480p 5 s = 15 e 15 s = 45; 720p 5 s = 35, 10 s = 70 e 15 s = 105; 1080p 5 s = 80 e 15 s = 240.",
+    "O custo cresce de forma linear com a duração nas cotações conferidas; durações não cotadas são calculadas pela taxa por segundo.",
+    "Ligar o áudio gerado não acrescentou custo no 720p de 5 s (35 créditos nos dois casos).",
+    "Preço em dólar do crédito (show_plans_and_credits, plano Plus): pacotes avulsos de US$ 0,0526 a 0,0588 por crédito; plano Plus anual cerca de US$ 0,039 por crédito."
+  ],
+  "preco_credito_usd": {"minimo": 0.039, "referencia": 0.055, "maximo": 0.059}
+}

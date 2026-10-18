@@ -26,7 +26,7 @@ python3 "${CLAUDE_PLUGIN_ROOT}/scripts/validate_genplan.py" "<gen-plan.json>"
 - Pergunte a **resolução** (`480p` é a mais barata e serve para teste; `720p` é o padrão; `1080p` é a mais cara) e se quer áudio gerado (desligado por padrão; a narração e a trilha entram depois).
 
 ## 3. Teto de créditos
-O teto é **opcional**. Use a escolha que o usuário fez ao iniciar o fluxo (ou pergunte agora: um valor máximo de créditos, ou `sem-teto`). Crie o orçamento (uma vez); sem teto, cotação, total e confirmação continuam valendo, só não há limite máximo:
+O teto é **opcional**. Se o usuário ainda não viu quanto custa um clipe, mostre antes a tabela de referência (`python3 "${CLAUDE_PLUGIN_ROOT}/scripts/reference_table.py"`; reais só com a cotação do dólar que ele informar). Use a escolha que o usuário fez ao iniciar o fluxo (ou pergunte agora: um valor máximo de créditos, ou `sem-teto`). Crie o orçamento (uma vez); sem teto, cotação, total e confirmação continuam valendo, só não há limite máximo:
 ```bash
 python3 "${CLAUDE_PLUGIN_ROOT}/scripts/budget.py" init "<budget.json>" <teto|sem-teto>
 ```

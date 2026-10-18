@@ -4,7 +4,7 @@ Cada versão em `.claude-plugin/plugin.json` precisa de uma seção aqui. Quem i
 
 ## 0.2.0
 - Modo gerado: geração de clipes com cotação e confirmação do total, montagem, legendas por cena e trilha, e variantes (1 a 5 vídeos finais com os mesmos clipes).
-- Teto de gastos opcional (`sem-teto`), escolhido ao iniciar o fluxo.
+- Teto de gastos opcional (`sem-teto`), escolhido ao iniciar o fluxo, com uma tabela de referência de custos (qualidade x duração -> créditos e valor aproximado) para ajudar a escolher.
 - Editor Katana real conduzido pelo agente (`edit-katana`), com aceitação explícita, limite opcional e registro do gasto.
 - Projeto Remotion com legenda animada palavra a palavra (`render-remotion.sh`).
 - Dezenas de correções de robustez (ids, caminhos, lotes parciais, mensagens em português).
