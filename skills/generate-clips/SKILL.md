@@ -7,12 +7,19 @@ description: Gera os clipes de um storyboard do modo gerado no Higgsfield, cena 
 
 Converse em português do Brasil, uma pergunta por vez. **Nada consome crédito sem cotação, aprovação do total e teto.** Aqui quem chama o Higgsfield é você (o agente); os scripts montam o payload exato e registram o resultado.
 
-## O que não está validado (diga isso ao usuário)
-**Até agora, nenhuma chamada real de geração ao Higgsfield foi feita.** Tudo abaixo é leitura de documentação e testes com um gerador falso:
-- A **baixa automatizada** do vídeo pronto (a URL que o `jobs_wait` devolve) é **não verificado**. Se falhar, peça ao usuário para baixar o clipe no Higgsfield e informar o caminho do arquivo.
-- O formato do payload (o campo `context` e os parâmetros do modelo), o formato da resposta de `get_cost` e o `job_id` ser um UUID são suposições não validadas.
-- O **custo efetivo** de um job só é conhecido depois da geração; veja a regra no passo 6.
-- Os limites de duração (4 a 30 s inteiros no `seedance_2_5`) e os custos vêm da leitura de `models_explore` e de `get_cost`; confira sempre com `get_cost` antes de gerar.
+## Validado com a conta real (2026-10-18)
+Teste feito com 1 clipe de 5 s, 480p, 9:16, sem áudio (15 créditos, plano Plus):
+- O payload de cotação e o de geração funcionam exatamente como o script os emite. `get_cost` devolve `{"cost":{"credits":N,"credits_exact":N}}` sem criar job nem cobrar.
+- `generate_video` devolve `results[0].id` (um UUID, o `job_id`) com `status: pending`. `jobs_wait` (cada espera dura até 15 s; um clipe de 5 s em 480p levou cerca de 1,5 min) mostra `in_progress` e depois `completed` com `result_url`. O campo `type` vem como "image" enquanto o job roda e vira "video" no fim: ignore.
+- A **baixa** é um `curl -L` simples da `result_url` (CDN do Higgsfield, HTTP 200, sem autenticação): mp4 h264 de 480x854 a 24 fps.
+- O **custo efetivo** é a diferença do `balance` antes e depois: deu exatamente 15, igual à cotação.
+- `generate-clips.sh --stage register` **copia** o arquivo para `clips/<id>.mp4` e recusa se já existir: baixe para **outro caminho** (por exemplo `baixado-<id>.mp4`), nunca direto para `clips/`.
+
+## O que ainda não está verificado (diga ao usuário)
+- Gerações em 720p/1080p, com áudio gerado, várias cenas em lote e a retomada depois de timeout.
+- O Katana e o `use_unlim` (nunca usados).
+- O custo efetivo só é conhecido depois da geração; veja a regra no passo 6.
+- Os limites de duração (4 a 30 s inteiros no `seedance_2_5`) vêm de `models_explore`; confira sempre com `get_cost` antes de gerar.
 
 ## 1. Entradas
 Storyboard do modo gerado já aprovado (`storyboard.json`, com `prompt` em todas as cenas) e `research.json`. Sem storyboard aprovado, volte à skill `script-storyboard`.
@@ -59,7 +66,7 @@ Sem execução em paralelo, a menos que o usuário peça e o teto comporte. Para
    ```
    Envie o JSON **sem alterar nada** a `generate_video` e guarde o `job_id`. O payload de geração de uma cena **sai uma única vez** (o orçamento marca a cena como emitida): um segundo envio poderia criar e cobrar um segundo job.
 2. **Se a chamada der timeout, não reenvie**: o resultado da submissão é desconhecido. Reaproveite o `job_id` ou confira o job antes de qualquer nova tentativa. Só se tiver conferido que nenhum job foi criado, peça o payload de novo com `--reemitir`.
-3. Espere com `jobs_wait` até o job terminar. Baixe o resultado para um arquivo local (baixa automatizada: não verificado).
+3. Espere com `jobs_wait` até o job terminar. Baixe o resultado com `curl -L` da `result_url` para um arquivo local fora de `clips/` (baixa validada com a conta real).
 4. Descubra o **custo efetivo**: compare o `balance` antes e depois do job (ou use `transactions`) e **nunca repita a cotação** como se fosse o custo efetivo, senão um estouro nunca seria detectado. Se não conseguir determinar o custo, diga isso ao usuário e registre a cotação marcando como não verificado. Registre o clipe e o gasto efetivo:
    ```bash
    bash "${CLAUDE_PLUGIN_ROOT}/scripts/generate-clips.sh" "<gen-plan.json>" "<pasta de trabalho>" --generator mcp-agent --stage register --scene <id> --job-id <uuid do job> --custo <custo efetivo> --arquivo "<clipe baixado>" --budget "<budget.json>"

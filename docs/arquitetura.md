@@ -41,3 +41,6 @@ Fases seguintes: agendador por MCP, validação da geração real e da baixa dos
 
 ## Editor Katana real (agente) e teto opcional
 O Katana (Higgsfield) é um fluxo **autônomo**: analisa o material e gasta créditos por conta própria, sem confirmação, e só cota depois da análise. Por isso o adaptador real não é um script de cotação: `katana_brief.py` monta o briefing (fonte, trechos, limite de créditos) para o agente; o agente roda o Katana (skill `edit-katana`, com o "aceito" explícito do usuário) e `katana_register.sh` valida o vídeo (9:16), entrega `final-<id>.mp4` e registra o gasto efetivo com `budget.py externo` (gasto acima do teto é registrado, o vídeo é mantido e o lote para). O **teto de gastos é opcional** (`budget.py init <arquivo> <teto|sem-teto>`): sem teto, a cotação e a confirmação do total continuam valendo nos fluxos que cotam (geração de clipes), e o Katana define o próprio limite.
+
+## Validação real da geração (2026-10-18)
+Um clipe real (5 s, 480p, 9:16, sem áudio, 15 créditos) passou pelo fluxo completo: `get_cost` -> confirmação do total -> `generate_video` -> `jobs_wait` -> baixa por `curl` da `result_url` -> `register` -> `assemble-clips.sh`. O custo efetivo (diferença de `balance`) foi igual à cotação. Detalhes e armadilhas em `skills/generate-clips/SKILL.md`.

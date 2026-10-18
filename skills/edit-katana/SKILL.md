@@ -32,7 +32,7 @@ O JSON traz `fonte`, `trechos`, `brief`, `limite_creditos` (null quando não há
 2. Passe o `brief` e o `limite_creditos` como limite numérico do trabalho. Sem teto, diga ao Katana que não há limite numérico do usuário.
 3. **Não use** `use_unlim`, `use_free_gens` nem presets sem o usuário pedir. `get_katana_config` **cria uma sessão** (não é leitura): só use se for rodar um preset `/katana/...` que o usuário escolheu.
 4. Acompanhe com `jobs_wait`. Se o Katana disser que não pôde concluir, **pare**, mostre o que foi gasto (`transactions`) e não tente de novo sem o usuário.
-5. Baixe o vídeo final para o disco. Baixa do resultado: **não verificada** com a conta real. Se não conseguir baixar, peça ao usuário que baixe o arquivo do Higgsfield e informe o caminho.
+5. Baixe o vídeo final para o disco. A baixa de um clipe gerado já foi validada (`curl -L` da `result_url`), mas a do resultado do **Katana** é **não verificada** com a conta real. Se não conseguir baixar, peça ao usuário que baixe o arquivo do Higgsfield e informe o caminho.
 6. Descubra o **gasto real** (diferença de `balance` antes e depois, ou `transactions`) e os `job_ids`.
 
 ## 5. Registrar

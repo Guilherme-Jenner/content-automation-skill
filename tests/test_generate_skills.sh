@@ -51,8 +51,9 @@ test_generate_skill_explains_the_effective_cost_and_what_was_never_tested() {
   assert_contains "$s" "balance" "custo efetivo pela diferença de saldo"
   assert_contains "$s" "transactions" "ou pelas transações"
   assert_contains "$s" "nunca repita a cotação" "não copiar a cotação como se fosse o custo efetivo"
-  assert_contains "$s" "nenhuma chamada real" "diz que nenhuma chamada real ao Higgsfield foi feita"
-  assert_contains "$s" "context" "formato do payload não validado"
+  assert_contains "$s" "Validado com a conta real" "registra o que foi validado com uma geração real"
+  assert_contains "$s" "credits_exact" "documenta o formato real da resposta do get_cost"
+  assert_contains "$s" "baixado-" "avisa para não baixar direto para clips/ (o register copia e recusa se existir)"
   assert_contains "$s" "UUID" "formato do job_id não validado"
 }
 

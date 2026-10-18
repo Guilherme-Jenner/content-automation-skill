@@ -31,12 +31,12 @@ Use a skill `research-trends` (dados reais, com fontes) e depois `script-storybo
 
 ## 3. Etapa do meio
 - **Modo gravado:** entregue a shot list e espere o usuário gravar. Peça o **caminho do arquivo** no disco.
-- **Modo gerado:** use a skill `generate-clips` (Higgsfield, cena a cena, sob um **teto de créditos** definido pelo usuário, com cotação, aprovação do total e registro de cada clipe). Ela monta os clipes em `video-gerado.mp4`. Avise que a **baixa automatizada** do resultado ainda não foi verificada com a conta real.
+- **Modo gerado:** use a skill `generate-clips` (Higgsfield, cena a cena, sob um **teto de créditos** definido pelo usuário, com cotação, aprovação do total e registro de cada clipe). Ela monta os clipes em `video-gerado.mp4`. A geração e a baixa do clipe já foram validadas com a conta real (480p, uma cena); 720p/1080p e áudio gerado ainda não.
 
 ## 4. Edição: duas perguntas antes de começar
 1. **Qual editor?**
    - `local` (padrão): a edição desta ferramenta (ffmpeg), sem custo.
-   - `katana`: a edição autônoma dentro do Higgsfield, que **gasta créditos sozinha** (sem pedir confirmação no meio). Use a skill `edit-katana`: exige o "aceito" explícito do usuário, passa o teto opcional como limite (ou diz que não há limite) e registra o gasto. A baixa automática do resultado ainda não implementada/verificada com a conta real.
+   - `katana`: a edição autônoma dentro do Higgsfield, que **gasta créditos sozinha** (sem pedir confirmação no meio). Use a skill `edit-katana`: exige o "aceito" explícito do usuário, passa o teto opcional como limite (ou diz que não há limite) e registra o gasto. A baixa do resultado do Katana é não verificada com a conta real.
 2. **Quantos vídeos finais?** De 1 a 5 (o máximo é 5, para qualquer editor). Um bruto pode virar vários vídeos: cada um mostra uma parte diferente do bruto, ou a mesma parte com uma edição diferente. Se o usuário pedir mais de 5, explique o limite e peça um número de 1 a 5.
 
 Depois use a skill `edit-recorded` (modo gravado). No **modo gerado**, use a skill `edit-generated` (legendas por cena escritas a partir do roteiro e uma trilha sonora que o usuário fornece, tudo local e sem gastar crédito). No modo gerado, as variantes (de 1 a 5 vídeos finais, recombinando os clipes já gerados com outras cenas, legendas e trilha) estão na própria `edit-generated` (`run-gen-variants.sh`), sem gastar crédito, com aprovação por variante; clipes novos continuam sendo da `generate-clips`, com teto. O motion ainda não implementado nesta versão.

@@ -19,7 +19,7 @@ Feito para uso interno da CLO (app Clo) e aberto para quem quiser adaptar. A con
 | Edição com Katana | `edit-katana` | Edição autônoma no Higgsfield (gasta sozinha, dentro do limite opcional que você der), com registro do resultado e do gasto |
 | Agendamento | `schedule-post` | Legenda, hashtags, horários, **aprovação por post** amarrada ao conteúdo; pacote manual de entrega |
 
-Ainda não existem: a baixa automática do resultado do Higgsfield (não verificada com a conta real), agendador real por MCP (hoje a entrega é o pacote manual), motion/efeitos com Remotion (último passo do plano), e o empacotamento final para instalação pelo marketplace.
+Ainda não existem: agendador real por MCP (hoje a entrega é o pacote manual), motion/efeitos com Remotion (último passo do plano), e o empacotamento final para instalação pelo marketplace.
 
 ## Garantias de segurança
 
