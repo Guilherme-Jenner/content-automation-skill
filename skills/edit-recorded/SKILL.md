@@ -55,7 +55,7 @@ Aplicação:
 ```bash
 bash "${CLAUDE_PLUGIN_ROOT}/scripts/edit-recorded.sh" "<caminho do video>" "<diretorio de trabalho>" --stage apply --variants "<diretorio de trabalho>/variants-plan.json"
 ```
-Gera `final-<id>.mp4` e `.srt` para cada variante aprovada e relata concluídas, puladas e falhas. O editor `katana` ainda não implementado: se o plano pedir `katana`, ofereça `local`.
+Gera `final-<id>.mp4` e `.srt` para cada variante aprovada e relata concluídas, puladas e falhas. Com o editor `katana`, use a skill `edit-katana`: o agente roda o Katana no Higgsfield (que **gasta sozinho**, dentro do limite do teto opcional) e registra o resultado; a baixa automática do vídeo ainda não implementada e não verificada com a conta real (se falhar, o usuário baixa o arquivo). Em dúvida, ofereça `local` (custo zero).
 
 ## Regras
 - Nunca invente fonte ou dado. Se a pesquisa falhar, diga e trabalhe com hipóteses marcadas.

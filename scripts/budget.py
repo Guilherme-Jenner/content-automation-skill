@@ -6,7 +6,7 @@ TOTAL que viu) -> spend (por item). Nada é gasto sem cotação confirmada, e o 
 (gasto + confirmado ainda não gasto) nunca passa do teto.
 
 Uso:
-  budget.py init    <arquivo> <teto>
+  budget.py init    <arquivo> <teto|sem-teto>   (o teto é opcional: o usuário escolhe ao iniciar o fluxo)
   budget.py quote   <arquivo> <item> <custo>
   budget.py status  <arquivo>
   budget.py confirm <arquivo> <total>   confirma as cotações pendentes; <total> deve ser o total mostrado ao usuário
@@ -16,6 +16,8 @@ Uso:
                     (gasto + confirmado não gasto) cabem no teto; --ignorar-teto é só para REGISTRAR um clipe já pago
   budget.py emit    <arquivo> <item> [--reemitir]   marca que o payload de geração foi emitido (uma vez); reemitir só
                     depois de conferir no Higgsfield que nenhum job foi criado
+  budget.py externo <arquivo> <item> <gasto>  registra o gasto de um serviço AUTÔNOMO que cobra por conta própria (Katana):
+                    não há cotação prévia a confirmar; o gasto efetivo é registrado e, se passar do teto, sai com código 3
   budget.py raise   <arquivo> <novo_teto>  aumenta o teto (decisão explícita do usuário; nunca reduz)
   budget.py drop    <arquivo> <item>       descarta um item que ainda não foi gasto (libera a reserva)
   budget.py state   <arquivo> <item>    imprime: nenhum | pendente | confirmado | emitido | gasto
@@ -45,6 +47,9 @@ class Recusa(Exception):
 
 class Estouro(Recusa):
     codigo = SAIDA_ESTOURO
+
+
+SEM_TETO = "sem-teto"
 
 
 def numero(texto, nome, minimo_exclusivo=False):
@@ -116,7 +121,8 @@ def carregar(caminho):
     if not isinstance(dados, dict) or not isinstance(dados.get("itens"), dict) or "teto" not in dados:
         raise corrompido("estrutura inesperada")
     try:
-        dados["teto"] = numero(dados["teto"], "teto", minimo_exclusivo=True)
+        if dados["teto"] is not None:
+            dados["teto"] = numero(dados["teto"], "teto", minimo_exclusivo=True)
         for nome, item in dados["itens"].items():
             if not isinstance(item, dict) or not isinstance(item.get("confirmado"), bool):
                 raise corrompido(f"item '{nome}'")
@@ -133,7 +139,7 @@ def carregar(caminho):
 
 def salvar(caminho, dados):
     saida = {
-        "teto": fmt(dados["teto"]),
+        "teto": None if dados["teto"] is None else fmt(dados["teto"]),
         "itens": {
             k: {
                 "cotado": fmt(v["cotado"]),
@@ -192,12 +198,12 @@ def estado(v):
 
 def cmd_init(a):
     caminho, teto_txt = a
-    teto = numero(teto_txt, "teto", minimo_exclusivo=True)
+    teto = None if teto_txt.strip().lower() == SEM_TETO else numero(teto_txt, "teto", minimo_exclusivo=True)
     with travar(caminho):
         if os.path.exists(caminho):
             raise Recusa(f"o orçamento já existe: {caminho} (não é sobrescrito)")
         salvar(caminho, {"teto": teto, "itens": {}})
-    print(f"orçamento criado: teto {fmt(teto)}")
+    print("orçamento criado: sem teto (cotação e confirmação do total continuam valendo)" if teto is None else f"orçamento criado: teto {fmt(teto)}")
 
 
 def cmd_quote(a):
@@ -217,10 +223,11 @@ def cmd_status(a):
     with travar(a[0]):
         d = carregar(a[0])
     comp = comprometido(d)
-    print(f"teto: {fmt(d['teto'])}")
+    print("teto: sem teto" if d["teto"] is None else f"teto: {fmt(d['teto'])}")
     print(f"gasto: {fmt(gasto_total(d))}")
     print(f"comprometido: {fmt(comp)}")
-    print(f"restante: {fmt(d['teto'] - comp)}")
+    if d["teto"] is not None:
+        print(f"restante: {fmt(d['teto'] - comp)}")
     print(f"total cotado: {fmt(pendente(d))}")
     for nome, v in d["itens"].items():
         extra = ", estourou" if v["estourou"] else ""
@@ -239,13 +246,16 @@ def cmd_confirm(a):
             raise Recusa(
                 f"o total informado ({fmt(total)}) não bate com o total pendente ({fmt(novos)}); mostre o total atual ao usuário"
             )
-        restante = d["teto"] - comprometido(d)
-        if novos > restante:
+        restante = None if d["teto"] is None else d["teto"] - comprometido(d)
+        if restante is not None and novos > restante:
             raise Recusa(f"o custo total cotado ({fmt(novos)}) excede o restante do teto ({fmt(restante)})")
         for v in d["itens"].values():
             v["confirmado"] = True
         salvar(caminho, d)
-    print(f"confirmado: {fmt(novos)} (restante após reservar: {fmt(restante - novos)})")
+    if restante is None:
+        print(f"confirmado: {fmt(novos)} (sem teto definido)")
+    else:
+        print(f"confirmado: {fmt(novos)} (restante após reservar: {fmt(restante - novos)})")
 
 
 def cmd_spend(a):
@@ -284,7 +294,7 @@ def validar_item_para_gerar(d, item, atual=None, ignorar_teto=False, exigir_emit
             f"a cotação do item '{item}' ainda não foi confirmada (rode confirm depois que o usuário aprovar o total)"
         )
     comp = comprometido(d)
-    if not ignorar_teto and comp > d["teto"]:
+    if not ignorar_teto and d["teto"] is not None and comp > d["teto"]:
         raise Recusa(
             f"os compromissos ({fmt(comp)}) ultrapassam o teto ({fmt(d['teto'])}), em geral depois de um estouro: nada novo é gerado "
             "sem uma decisão do usuário (aumentar o teto com raise, ou descartar itens com drop e cotar de novo)"
@@ -328,16 +338,38 @@ def cmd_emit(a):
     print(f"payload emitido: {item}")
 
 
+def cmd_externo(a):
+    caminho, item, gasto_txt = a
+    item_valido(item)
+    gasto = numero(gasto_txt, "gasto")
+    with travar(caminho):
+        d = carregar(caminho)
+        if item in d["itens"]:
+            raise Recusa(f"o item '{item}' já está registrado")
+        d["itens"][item] = {"cotado": gasto, "confirmado": True, "gasto": gasto, "estourou": False, "emitido": True}
+        passou = d["teto"] is not None and comprometido(d) > d["teto"]
+        if passou:
+            d["itens"][item]["estourou"] = True
+        salvar(caminho, d)  # o crédito já foi consumido: registra sempre o valor efetivo
+    if passou:
+        raise Estouro(f"o gasto registrado ({fmt(gasto)}) levou o total acima do teto ({fmt(d['teto'])}); nada novo deve ser gerado sem uma decisão do usuário")
+    print(f"gasto externo registrado: {item} = {fmt(gasto)}")
+
+
 def cmd_raise(a):
     caminho, novo_txt = a
     novo = numero(novo_txt, "teto", minimo_exclusivo=True)
     with travar(caminho):
         d = carregar(caminho)
-        if novo <= d["teto"]:
+        era_sem_teto = d["teto"] is None
+        if era_sem_teto:
+            if novo < comprometido(d):
+                raise Recusa(f"o teto ({fmt(novo)}) não pode ficar abaixo do que já está gasto ou confirmado ({fmt(comprometido(d))})")
+        elif novo <= d["teto"]:
             raise Recusa(f"o novo teto ({fmt(novo)}) deve ser maior que o atual ({fmt(d['teto'])}); este comando nunca reduz o teto")
         d["teto"] = novo
         salvar(caminho, d)
-    print(f"teto aumentado para {fmt(novo)}")
+    print(f"teto definido em {fmt(novo)}" if era_sem_teto else f"teto aumentado para {fmt(novo)}")
 
 
 def cmd_drop(a):
@@ -370,6 +402,7 @@ COMANDOS = {
     "spend": (cmd_spend, 3, 3),
     "check": (cmd_check, 2, 5),
     "emit": (cmd_emit, 2, 3),
+    "externo": (cmd_externo, 3, 3),
     "raise": (cmd_raise, 2, 2),
     "drop": (cmd_drop, 2, 2),
     "state": (cmd_state, 2, 2),

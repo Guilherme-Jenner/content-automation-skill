@@ -16,14 +16,15 @@ Feito para uso interno da CLO (app Clo) e aberto para quem quiser adaptar. A con
 | Modo gerado | `generate-clips` | Gera clipes no Higgsfield com **teto de créditos**: cotação, confirmação do total e gasto dentro do teto |
 | Edição (gerado) | `edit-generated` | Legendas por cena e trilha sobre o vídeo montado; **variantes** (1 a 5 finais com os mesmos clipes); sem gastar crédito |
 | Edição (gravado) | `edit-recorded` | Cortes de silêncio, legendas (Whisper), áudio, 9:16; variantes; aprovação dos cortes |
+| Edição com Katana | `edit-katana` | Edição autônoma no Higgsfield (gasta sozinha, dentro do limite opcional que você der), com registro do resultado e do gasto |
 | Agendamento | `schedule-post` | Legenda, hashtags, horários, **aprovação por post** amarrada ao conteúdo; pacote manual de entrega |
 
-Ainda não existem: adaptador real do editor Katana, agendador real por MCP (hoje a entrega é o pacote manual), motion/efeitos com Remotion (último passo do plano), e o empacotamento final para instalação pelo marketplace.
+Ainda não existem: a baixa automática do resultado do Higgsfield (não verificada com a conta real), agendador real por MCP (hoje a entrega é o pacote manual), motion/efeitos com Remotion (último passo do plano), e o empacotamento final para instalação pelo marketplace.
 
 ## Garantias de segurança
 
 - Nada é publicado nem agendado sem aprovação explícita, por post.
-- Tudo que consome crédito passa pelo teto de gastos (`scripts/budget.py`): cotar → confirmar o total → gerar → registrar o gasto. Estouro é registrado e interrompe o lote.
+- Tudo que consome crédito é registrado em `scripts/budget.py`: cotar → confirmar o total → gerar → registrar o gasto. O **teto é opcional** (você escolhe ao iniciar; pode ser `sem-teto`); com teto, estouro é registrado e interrompe o lote.
 - Vídeo gerado por IA deve ser declarado como conteúdo de IA ao publicar.
 - A trilha sonora é sempre um arquivo fornecido pelo usuário; a licença da música é responsabilidade dele. Nada é baixado nem gerado.
 - Nenhum teste chama serviço pago: geradores, editor Katana, transcritor e agendador têm versões falsas.

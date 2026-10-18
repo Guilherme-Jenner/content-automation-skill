@@ -16,6 +16,12 @@ pesquisa → roteiro/hook → [modo] → bruto → edição (editor + N vídeos)
 ## 1. Descubra o modo
 Pergunte (ou deduza do pedido e confirme em uma frase): o vídeo será **gerado** (clipes criados por IA) ou **gravado** (o usuário grava)? Se o usuário já tem um vídeo gravado e só quer editar, vá direto ao passo 4 com o caminho do arquivo.
 
+## 1b. Teto de gastos (opcional)
+Ao iniciar, pergunte: "Quer definir um **teto de créditos** para esta produção? É opcional." O usuário escolhe um valor ou prefere **não ter teto** (`sem-teto`). Guarde a resposta e use-a em tudo que consome crédito (`generate-clips`, e o editor `katana` quando existir): ela vira o argumento de `budget.py init` (`<teto>` ou `sem-teto`).
+- **Com teto:** nada passa dele; estouro é registrado e interrompe o lote.
+- **Sem teto:** o custo continua sendo **estimado antes, mostrado como total e só segue com a confirmação do usuário**; apenas não há limite máximo. O usuário pode definir um teto depois (`budget.py raise`).
+- O modo gravado com editor `local` não gasta crédito e não precisa dessa pergunta.
+
 ## 2. Pesquisa e roteiro
 Use a skill `research-trends` (dados reais, com fontes) e depois `script-storyboard`. Não proponha roteiro sem `research.json` válido. O usuário aprova o roteiro antes de seguir.
 
@@ -26,7 +32,7 @@ Use a skill `research-trends` (dados reais, com fontes) e depois `script-storybo
 ## 4. Edição: duas perguntas antes de começar
 1. **Qual editor?**
    - `local` (padrão): a edição desta ferramenta (ffmpeg), sem custo.
-   - `katana`: a edição dentro do Higgsfield, que consome créditos. O editor `katana` ainda não implementado nesta versão: diga isso e ofereça o `local`. Quando existir, ele só roda com **teto de gastos** definido pelo usuário, custo estimado antes e confirmação.
+   - `katana`: a edição autônoma dentro do Higgsfield, que **gasta créditos sozinha** (sem pedir confirmação no meio). Use a skill `edit-katana`: exige o "aceito" explícito do usuário, passa o teto opcional como limite (ou diz que não há limite) e registra o gasto. A baixa automática do resultado ainda não implementada/verificada com a conta real.
 2. **Quantos vídeos finais?** De 1 a 5 (o máximo é 5, para qualquer editor). Um bruto pode virar vários vídeos: cada um mostra uma parte diferente do bruto, ou a mesma parte com uma edição diferente. Se o usuário pedir mais de 5, explique o limite e peça um número de 1 a 5.
 
 Depois use a skill `edit-recorded` (modo gravado). No **modo gerado**, use a skill `edit-generated` (legendas por cena escritas a partir do roteiro e uma trilha sonora que o usuário fornece, tudo local e sem gastar crédito). No modo gerado, as variantes (de 1 a 5 vídeos finais, recombinando os clipes já gerados com outras cenas, legendas e trilha) estão na própria `edit-generated` (`run-gen-variants.sh`), sem gastar crédito, com aprovação por variante; clipes novos continuam sendo da `generate-clips`, com teto. O motion ainda não implementado nesta versão.
@@ -36,6 +42,6 @@ Use a skill `schedule-post`: legenda, hashtags, dias e horários, validação e 
 
 ## Regras
 - Aprovação humana é obrigatória: do roteiro, dos cortes criativos, **de cada variante** e, no futuro, de data/hora e legenda antes de agendar.
-- Qualquer coisa que consuma crédito respeita o teto de gastos: estimar antes, mostrar o total e só seguir com confirmação.
+- Qualquer coisa que consuma crédito: estimar antes, mostrar o total e só seguir com confirmação; se o usuário definiu um teto (opcional), ele nunca é ultrapassado.
 - Nunca invente dado ou fonte; diga quando algo for hipótese.
 - Se faltar dependência, rode `bash "${CLAUDE_PLUGIN_ROOT}/scripts/check-deps.sh"` e oriente a instalação.

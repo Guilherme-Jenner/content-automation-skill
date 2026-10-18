@@ -42,7 +42,7 @@ if [ "$editor" = local ]; then
 fi
 
 # --- katana ---------------------------------------------------------------------------------
-[ "${CLO_KATANA:-}" = fake ] || die "o editor 'katana' ainda não implementado (o adaptador real depende de validar com a conta); use o editor local"
+[ "${CLO_KATANA:-}" = fake ] || die "o editor 'katana' real não roda por script: o Katana é um fluxo autônomo que o agente executa no Higgsfield (ele gasta sozinho). Use a skill edit-katana (katana_brief.py + katana_register.sh), ou o editor local"
 [ -n "$budget" ] || die "o editor katana consome crédito: informe o teto com --budget <arquivo> (crie com: budget.py init <arquivo> <teto>)"
 [ -f "$budget" ] || die "orçamento não encontrado: $budget (crie com budget.py init <arquivo> <teto>)"
 nl=$'\n'

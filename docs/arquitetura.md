@@ -13,7 +13,7 @@ Plugin do Claude Code: skills (instruções para o Claude) + scripts (bash + ffm
 | `generate-clips` | Modo gerado: cotar, aprovar o total, gerar cena a cena sob teto e montar os clipes |
 | `schedule-post` | Legenda, horários e aprovação por hash; entrega pelo pacote manual |
 
-Fases seguintes: adaptadores reais (Katana, agendador por MCP, geração real), motion no modo gerado, empacotamento para o Mac e, por último, o polimento visual com Remotion.
+Fases seguintes: agendador por MCP, validação da geração real e da baixa dos resultados, motion no modo gerado, empacotamento para o Mac e, por último, o polimento visual com Remotion.
 
 ## Scripts (cada um testável sozinho)
 `silence-detect.sh` → `apply-cuts.sh` (só com plano `approved:true`) → `normalize-audio.sh` → `reframe-9x16.sh` → `subtitles.sh`; `transcribe.sh` é a porta do Whisper (real ou falsa); `edit-recorded.sh` orquestra os estágios `propose` e `apply`; `retime_transcript.py` ajusta as legendas à linha do tempo cortada.
@@ -38,3 +38,6 @@ Fases seguintes: adaptadores reais (Katana, agendador por MCP, geração real), 
 
 ## Variantes do modo gerado (Fase 3c)
 `gen-variants-plan.json` (1 a 5 variantes; cada uma com cenas na ordem escolhida, legendas, estilo e trilha opcional; `aprovada` por variante) → `validate_gen_variants.py` (ids seguros, cenas existentes, gancho = primeira legenda e diferente entre variantes, variantes idênticas recusadas) → `gen_variant_info.py` deriva um gen-plan por variante (mesmos prompts, logo mesma chave de orçamento e mesma verificação de hash do manifesto) → `run-gen-variants.sh`: valida tudo antes de produzir, depois `assemble-clips.sh` + `edit-generated.sh` por variante, entregando `final-<id>.mp4/.srt`. Custo zero; nunca toca no orçamento.
+
+## Editor Katana real (agente) e teto opcional
+O Katana (Higgsfield) é um fluxo **autônomo**: analisa o material e gasta créditos por conta própria, sem confirmação, e só cota depois da análise. Por isso o adaptador real não é um script de cotação: `katana_brief.py` monta o briefing (fonte, trechos, limite de créditos) para o agente; o agente roda o Katana (skill `edit-katana`, com o "aceito" explícito do usuário) e `katana_register.sh` valida o vídeo (9:16), entrega `final-<id>.mp4` e registra o gasto efetivo com `budget.py externo` (gasto acima do teto é registrado, o vídeo é mantido e o lote para). O **teto de gastos é opcional** (`budget.py init <arquivo> <teto|sem-teto>`): sem teto, a cotação e a confirmação do total continuam valendo nos fluxos que cotam (geração de clipes), e o Katana define o próprio limite.
