@@ -1,3 +1,5 @@
 .superpowers/
 /tmp/
 *.tmp
+node_modules/
+remotion/out/
