@@ -1,0 +1,12 @@
+{
+  "name": "clo-tools",
+  "owner": { "name": "CLO" },
+  "description": "Plugins do Claude Code da CLO",
+  "plugins": [
+    {
+      "name": "clo-content-pipeline",
+      "source": ".",
+      "description": "Pipeline de conteúdo em vídeo: pesquisa, roteiro, geração, edição e agendamento com aprovação humana."
+    }
+  ]
+}

@@ -1,5 +1,8 @@
 {
   "name": "clo-content-pipeline",
-  "version": "0.1.0",
-  "description": "Pipeline de conteúdo em vídeo da CLO: roteiro, edição e agendamento com aprovação humana."
+  "version": "0.2.0",
+  "description": "Pipeline de conteúdo em vídeo da CLO: pesquisa, roteiro, geração e edição (ffmpeg, Whisper, Katana, Remotion) e agendamento com aprovação humana.",
+  "author": { "name": "CLO" },
+  "license": "MIT",
+  "keywords": ["video", "content", "ffmpeg", "higgsfield", "shorts"]
 }

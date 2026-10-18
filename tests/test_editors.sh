@@ -31,11 +31,11 @@ test_local_editor_never_touches_the_budget() {
   rm -rf "$d"
 }
 
-test_real_katana_is_not_implemented_yet() {
+test_real_katana_runs_through_the_agent_skill_not_a_script() {
   local f d msg; f="$(fixtures_dir)"; d="$(mktemp -d)"
   _prep "$d" "$f/tone_silence_tone.mp4" katana 1
   msg=$(_rv "$f/tone_silence_tone.mp4" "$d/w" --variants "$d/p.json" --stage quote 2>&1) && _fail "deveria recusar"
-  assert_contains "$msg" "ainda não implementado" "mensagem"
+  assert_contains "$msg" "edit-katana" "aponta a skill que conduz o Katana real"
   rm -rf "$d"
 }
 
