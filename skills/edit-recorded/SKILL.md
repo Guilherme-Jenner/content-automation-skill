@@ -39,7 +39,7 @@ bash "${CLAUDE_PLUGIN_ROOT}/scripts/edit-recorded.sh" "<caminho do video>" "<dir
 Resultado: `final.mp4` (9:16, áudio normalizado, legenda queimada) e `final.srt`. Mostre o caminho ao usuário e peça a avaliação; ajustes voltam ao passo 2. Para refazer, use `--force`.
 
 ## 5. Várias versões do mesmo bruto (variantes)
-Quando o usuário quiser mais de um vídeo final (de 1 a 5; o editor é `local`), em vez de um único `cut-plan.json` use um `variants-plan.json` no diretório de trabalho (formato em `schemas/variants-plan.schema.json`). Rode antes o `propose` para obter `transcript.json`. Cada variante tem `tipo`:
+Quando o usuário quiser mais de um vídeo final (de 1 a 5; o editor é `local`), em vez de um único `cut-plan.json` use um `variants-plan.json` no diretório de trabalho (formato em `${CLAUDE_PLUGIN_ROOT}/schemas/variants-plan.schema.json`). Rode antes o `propose` para obter `transcript.json`. Cada variante tem `tipo`:
 - `trecho_diferente`: mostra outra parte do bruto;
 - `mesmo_trecho_edicao_diferente`: mesma parte, com edição diferente (ritmo dos cortes e estilo de legenda: `padrao`, `destaque` ou `discreto`).
 

@@ -3,7 +3,7 @@
 # Uso: subtitles.sh <video> <transcript.json> <saida.mp4> [--srt-only] [--force] [--style padrao|destaque|discreto]
 # O .srt fica ao lado da saída (mesmo nome, extensão .srt). Sem fala reconhecida, o vídeo é copiado sem legenda.
 set -eu
-here="$(cd "${BASH_SOURCE[0]%/*}" && pwd)"
+_src="${BASH_SOURCE[0]}"; case "$_src" in */*) _dir="${_src%/*}" ;; *) _dir=. ;; esac; here="$(cd "$_dir" && pwd)"   # bash puro: sem dirname externo
 # shellcheck source=lib/common.sh
 . "$here/lib/common.sh"
 
@@ -23,7 +23,7 @@ case "$style_name" in
   discreto) style="FontName=Arial,FontSize=11,PrimaryColour=&H00FFFFFF&,OutlineColour=&H00000000&,BorderStyle=1,Outline=1,Alignment=2,MarginV=40" ;;
   *) die "estilo de legenda desconhecido: $style_name (use padrao, destaque ou discreto)" ;;
 esac
-[ $# -ge 3 ] || die "uso: subtitles.sh <video> <transcript.json> <saida.mp4> [--srt-only] [--force]"
+[ $# -ge 3 ] || die "uso: subtitles.sh <video> <transcript.json> <saida.mp4> [--style padrao|destaque|discreto] [--srt-only] [--force]"
 video="$(abspath "$1")"; transcript="$(abspath "$2")"; out="$(abspath "$3")"
 
 need_cmd ffmpeg "brew install ffmpeg"
@@ -32,7 +32,7 @@ need_cmd python3 "brew install python"
 [ -f "$transcript" ] || die "transcript não encontrado: $transcript"
 duration="$(probe_duration "$video")"
 
-srt="${out%.*}.srt"
+srt="$(srt_path "$out")"
 if [ "$srt_only" -eq 1 ]; then refuse_existing "$srt" "$force"; else refuse_existing "$out" "$force"; fi
 
 work="$(tmpdir)"

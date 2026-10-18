@@ -56,6 +56,7 @@ def main(argv):
             erros.append("ids de variantes repetidos (maiúsculas e minúsculas contam como iguais)")
         for i, v in enumerate(variantes):
             nome = f"variantes[{i}]"
+            erros_antes = len(erros)   # só os erros DESTA variante escondem a checagem dos 1 s
             trechos = sorted(v["trechos"], key=lambda t: t["inicio_s"])
             anterior = 0.0
             for j, t in enumerate(trechos):
@@ -66,7 +67,7 @@ def main(argv):
                 if t["inicio_s"] < anterior - 1e-9:
                     erros.append(f"{nome}.trechos[{j}]: sobrepõe o trecho anterior")
                 anterior = max(anterior, t["fim_s"])
-            if not erros and soma(trechos) < 1.0:
+            if len(erros) == erros_antes and soma(trechos) < 1.0:
                 erros.append(f"{nome}: os trechos somam menos de 1 s")
             if not v["achados"]:
                 erros.append(f"{nome}: achados vazio (ligue a variante à pesquisa)")

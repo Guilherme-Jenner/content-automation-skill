@@ -42,6 +42,14 @@ abspath() { # caminho
   esac
 }
 
+# Caminho do .srt que acompanha uma saída: troca só a extensão do NOME do arquivo (ponto em pasta ou nome sem extensão não contam).
+srt_path() { # saida
+  local b d
+  b="$(basename "$1")"; d="$(dirname "$1")"
+  case "$b" in *.*) b="${b%.*}" ;; esac
+  printf '%s/%s.srt\n' "$d" "$b"
+}
+
 # Morre se o vídeo tiver menos de 1 s (não há o que editar).
 require_min_duration() { # arquivo
   local d

@@ -8,7 +8,7 @@
 #     existentes); depois, uma variante que falha não impede as outras, e o script termina com erro listando-as;
 #   - a música é arquivo do usuário (licença é responsabilidade dele); caminho relativo vale a partir da pasta do plano.
 set -eu
-here="$(cd "${BASH_SOURCE[0]%/*}" && pwd)"
+_src="${BASH_SOURCE[0]}"; case "$_src" in */*) _dir="${_src%/*}" ;; *) _dir=. ;; esac; here="$(cd "$_dir" && pwd)"   # bash puro: sem dirname externo
 # shellcheck source=lib/common.sh
 . "$here/lib/common.sh"
 
@@ -74,8 +74,10 @@ EOC
   python3 "$here/captions_to_transcript.py" "$work/$id/captions.json" "$work/$id/gen-plan.json" "$manifest" > /dev/null \
     || die "variante $id: as legendas não conferem com as cenas e os clipes; nada foi gerado"
   musica="$(python3 "$here/gen_variant_info.py" "$plan" music "$id")"
+  volume="$(python3 "$here/gen_variant_info.py" "$plan" volume "$id")"
   if [ "$musica" != "-" ]; then
-    "$here/add-soundtrack.sh" "$primeiro_clipe" "${musica% *}" "$work/$id/validacao.mp4" --volume-db "${musica##* }" --check-only \
+    vol_args=(); [ "$volume" = "-" ] || vol_args=(--volume-db "$volume")
+    "$here/add-soundtrack.sh" "$primeiro_clipe" "$musica" "$work/$id/validacao.mp4" ${vol_args[@]+"${vol_args[@]}"} --check-only \
       || die "variante $id: a música não pode ser usada; nada foi gerado"
   fi
 done <<EOA
@@ -86,10 +88,15 @@ EOA
 mkdir -p "$outdir"
 feitas=""; falharam=""
 produzir() { # id
-  local id="$1" musica extra
+  local id="$1" musica volume extra
   extra=()
+  [ "${CLO_TEST_FAIL_VARIANT:-}" != "$id" ] || die "falha simulada na variante $id (teste)"
   musica="$(python3 "$here/gen_variant_info.py" "$plan" music "$id")"
-  if [ "$musica" != "-" ]; then extra=(--music "${musica% *}" --volume-db "${musica##* }"); fi
+  volume="$(python3 "$here/gen_variant_info.py" "$plan" volume "$id")"
+  if [ "$musica" != "-" ]; then
+    extra=(--music "$musica")
+    [ "$volume" = "-" ] || extra+=(--volume-db "$volume")
+  fi
   "$here/assemble-clips.sh" "$work/$id/gen-plan.json" "$manifest" "$work/$id/montado.mp4" --force
   "$here/edit-generated.sh" "$work/$id/montado.mp4" "$work/$id/gen-plan.json" "$manifest" "$outdir/final-$id.mp4" \
     --captions "$work/$id/captions.json" ${extra[@]+"${extra[@]}"} $fflag
@@ -103,7 +110,7 @@ while IFS= read -r id; do
 done <<EOA
 $ids
 EOA
-echo "Concluídas:${feitas}"
+echo "Concluídas:${feitas:- nenhuma}"
 if [ -n "$falharam" ]; then
   echo "Falharam:${falharam}" >&2
   exit 1

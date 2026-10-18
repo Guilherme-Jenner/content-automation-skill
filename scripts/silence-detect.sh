@@ -2,7 +2,7 @@
 # Propõe um plano de cortes (approved=false) removendo silêncios do vídeo.
 # Uso: silence-detect.sh <video> <saida.json> [--min-silence 0.6] [--noise -35dB] [--pad 0.15] [--force]
 set -eu
-here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+_src="${BASH_SOURCE[0]}"; case "$_src" in */*) _dir="${_src%/*}" ;; *) _dir=. ;; esac; here="$(cd "$_dir" && pwd)"   # bash puro: sem dirname externo
 # shellcheck source=lib/common.sh
 . "$here/lib/common.sh"
 
@@ -11,9 +11,9 @@ video="$(abspath "$1")"; out="$(abspath "$2")"; shift 2
 min_silence=0.6; noise=-35dB; pad=0.15; force=0
 while [ $# -gt 0 ]; do
   case "$1" in
-    --min-silence) min_silence="${2:?}"; shift 2 ;;
-    --noise) noise="${2:?}"; shift 2 ;;
-    --pad) pad="${2:?}"; shift 2 ;;
+    --min-silence) [ $# -ge 2 ] || die "--min-silence exige um valor (segundos)"; min_silence="$2"; shift 2 ;;
+    --noise) [ $# -ge 2 ] || die "--noise exige um valor (ex.: -35dB)"; noise="$2"; shift 2 ;;
+    --pad) [ $# -ge 2 ] || die "--pad exige um valor (segundos)"; pad="$2"; shift 2 ;;
     --force) force=1; shift ;;
     *) die "opção desconhecida: $1" ;;
   esac

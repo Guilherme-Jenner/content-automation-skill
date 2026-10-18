@@ -95,12 +95,44 @@ test_info_derives_plan_in_the_variant_order_with_same_budget_keys() {
 test_info_music_resolves_relative_to_the_plan() {
   local d; d="$(mktemp -d)"; _plans "$d" "p['variantes'][0]['musica']='sub/m.wav'; p['variantes'][0]['volume_db']=-12"
   local m; m="$(_gi "$d/v.json" music A)"
-  assert_contains "$m" "m.wav -12" "arquivo e volume"
+  assert_contains "$m" "m.wav" "arquivo"
   assert_contains "$m" "$(basename "$d")" "dentro da pasta do plano"
+  assert_eq "-12" "$(_gi "$d/v.json" volume A)" "volume declarado"
+  assert_eq "-" "$(_gi "$d/v.json" volume B)" "sem volume declarado"
   rm -rf "$d"
 }
 
 test_id_with_trailing_newline_is_rejected() {
   local out
   out=$(_bad "p['variantes'][1]['id']='B\n'") && _fail "id com quebra de linha aceito"; assert_contains "$out" "id" "mensagem"
+}
+
+test_hook_is_the_caption_that_appears_first_in_time() {
+  local out
+  out=$(_bad "p['variantes'][1]['cenas']=['c1','c3']; p['variantes'][1]['legendas']['cenas']=[{'cena':'c1','legendas':[{'texto':'Outro texto qualquer','inicio_s':2,'fim_s':3.5},{'texto':'Sua rotina vive bagunçada?','inicio_s':0.2,'fim_s':1.5}]}]") && _fail "gancho igual (o primeiro NO TEMPO) aceito"
+  assert_contains "$out" "gancho" "mensagem"
+}
+
+test_volume_without_music_and_unknown_fields_are_rejected() {
+  local out
+  out=$(_bad "p['variantes'][0]['volume_db']=-12") && _fail "volume sem música aceito"; assert_contains "$out" "volume_db" "mensagem"
+  out=$(_bad "p['variantes'][0]['musicas']='m.wav'") && _fail "campo desconhecido aceito"; assert_contains "$out" "musicas" "cita o campo"
+  out=$(_bad "p['extra']=1") && _fail "campo desconhecido no topo aceito"; assert_contains "$out" "extra" "cita o campo do topo"
+}
+
+test_music_must_stay_inside_the_plan_folder_when_relative() {
+  local out
+  out=$(_bad "p['variantes'][0]['musica']='../outra/m.wav'") && _fail "música fora da pasta do plano aceita"
+  assert_contains "$out" "pasta do plano" "mensagem"
+}
+
+test_posix_absolute_music_path_is_refused_on_windows() {
+  [ "${OS:-}" = Windows_NT ] || return 0
+  local out
+  out=$(_bad "p['variantes'][0]['musica']='/tmp/m.wav'") && _fail "caminho POSIX absoluto aceito no Windows"
+  assert_contains "$out" "C:/" "orienta o formato"
+}
+
+test_skill_describes_the_hook_as_the_first_caption_in_time() {
+  assert_contains "$(cat "$ROOT/skills/edit-generated/SKILL.md")" "que aparece primeiro" "texto alinhado ao código"
 }

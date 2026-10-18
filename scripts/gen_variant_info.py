@@ -5,8 +5,9 @@ Uso:
   gen_variant_info.py <plano> list                       -> "<id> sim|nao" (aprovada), uma linha por variante
   gen_variant_info.py <plano> genplan <gen-plan> <id>    -> gen-plan derivado (só as cenas da variante, na ordem dela)
   gen_variant_info.py <plano> captions <id>              -> captions-plan da variante
-  gen_variant_info.py <plano> music <id>                 -> "<caminho absoluto> <volume_db>" ou "-" (sem música);
+  gen_variant_info.py <plano> music <id>                 -> caminho absoluto da música ou "-" (sem música);
                                                             caminho relativo é relativo à pasta do plano
+  gen_variant_info.py <plano> volume <id>                -> volume_db declarado ou "-" (vale o padrão do add-soundtrack.sh)
 """
 import json
 import os
@@ -40,7 +41,9 @@ def main(argv):
             saida("-")
         else:
             caminho = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(argv[1])), v["musica"]))
-            saida(f"{caminho} {v.get('volume_db', -18):g}")
+            saida(caminho)
+    elif modo == "volume":
+        saida(f"{v['volume_db']:g}" if "volume_db" in v else "-")
     else:
         print(f"modo desconhecido: {modo}", file=sys.stderr)
         return 2

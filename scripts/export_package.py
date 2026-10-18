@@ -8,6 +8,7 @@ Não publica nem agenda nada; só exige que o plano esteja válido.
 import os
 import shutil
 import sys
+import tempfile
 from datetime import datetime
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -64,9 +65,7 @@ def main(argv):
         if os.path.exists(destino) and not force:
             raise Recusa(f"o pacote já existe: {destino} (use --force para refazer)")
         os.makedirs(saida, exist_ok=True)
-        tmp = os.path.join(saida, f".{post_id}.tmp")
-        shutil.rmtree(tmp, ignore_errors=True)
-        os.makedirs(tmp)
+        tmp = tempfile.mkdtemp(dir=saida, prefix=f".{post_id}.")   # nome único: duas execuções não se pisam
         video = caminho_do_video(plano, post["video"])
         shutil.copyfile(video, os.path.join(tmp, "video" + os.path.splitext(video)[1]))
         legenda = post["legenda"] + "\n"

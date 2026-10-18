@@ -9,7 +9,7 @@
 #          Variantes já pagas e com arquivo final são puladas (nunca se cobra duas vezes); um estouro de
 #          cotação é registrado e INTERROMPE o lote.
 set -eu
-here="$(cd "${BASH_SOURCE[0]%/*}" && pwd)"
+_src="${BASH_SOURCE[0]}"; case "$_src" in */*) _dir="${_src%/*}" ;; *) _dir=. ;; esac; here="$(cd "$_dir" && pwd)"   # bash puro: sem dirname externo
 # shellcheck source=lib/common.sh
 . "$here/lib/common.sh"
 

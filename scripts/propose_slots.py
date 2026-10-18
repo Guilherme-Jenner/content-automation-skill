@@ -41,7 +41,7 @@ def ler_cadencia(caminho):
         raise Recusa("horarios deve ser uma lista não vazia de HH:MM (00:00 a 23:59)")
     if isinstance(minimo, bool) or not isinstance(minimo, (int, float)) or minimo < 0:
         raise Recusa("minimo_entre_posts_h deve ser um número maior ou igual a zero")
-    return {DIAS[d] for d in dias}, sorted(horarios), timedelta(hours=minimo)
+    return {DIAS[d] for d in dias}, sorted(set(horarios)), timedelta(hours=minimo)   # set: "12:00" repetido não gera o mesmo slot duas vezes
 
 
 def propor(dias, horarios, espacamento, quantidade, now):

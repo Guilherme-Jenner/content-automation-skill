@@ -7,7 +7,7 @@
 # Variantes: apply --variants <variants-plan.json> gera final-<id>.mp4 para cada variante APROVADA (editor local).
 # CLO_TEST_FAIL_VARIANT=<id> simula falha numa variante (somente testes).
 set -eu
-here="$(cd "${BASH_SOURCE[0]%/*}" && pwd)"
+_src="${BASH_SOURCE[0]}"; case "$_src" in */*) _dir="${_src%/*}" ;; *) _dir=. ;; esac; here="$(cd "$_dir" && pwd)"   # bash puro: sem dirname externo
 # shellcheck source=lib/common.sh
 . "$here/lib/common.sh"
 
@@ -42,6 +42,12 @@ norm = lambda p: os.path.normcase(os.path.normpath(os.path.abspath(p)))
 plano = json.load(open(sys.argv[1], encoding="utf-8"))
 sys.exit(0 if norm(plano["bruto"]) == norm(sys.argv[2]) else 1)
 PY
+  # A duração registrada no plano precisa ser a do vídeo: senão cada variante repetiria o mesmo erro lá no apply-cuts.
+  python3 - "$variants" "$(probe_duration "$video")" <<'PY' || die "a duração do variants-plan não bate com a do vídeo; refaça o plano a partir do vídeo atual"
+import json, sys
+plano = json.load(open(sys.argv[1], encoding="utf-8"))
+sys.exit(0 if abs(plano["duracao_s"] - float(sys.argv[2])) <= 0.5 else 1)
+PY
   local editor ids aprovadas puladas id rc nl
   editor="$(python3 "$here/variant_info.py" "$variants" editor)"
   [ "$editor" = "local" ] || die "o editor '$editor' ainda não implementado; use editor local no variants-plan"
@@ -71,7 +77,13 @@ EOA
     ( set -e; run_variant "$id" ) </dev/null
     rc=$?
     set -e
-    if [ "$rc" -eq 0 ]; then concluidas="$concluidas $id"; else falharam="$falharam $id"; fi
+    if [ "$rc" -eq 0 ]; then
+      concluidas="$concluidas $id"
+    else
+      falharam="$falharam $id"
+      # Com --force havia uma saída antiga: ela não pode ficar ao lado do relato "Falharam".
+      rm -f "$work/final-$id.mp4" "$work/final-$id.srt"
+    fi
   done <<EOA
 $aprovadas
 EOA

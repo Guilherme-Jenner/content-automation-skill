@@ -5,7 +5,7 @@
 # vídeo da pasta ainda tem o hash aprovado. Adaptadores reais devem fazer a mesma conferência.
 # CLO_FAKE_SCHEDULER_FAIL=1 simula uma falha do agendador (somente testes).
 set -eu
-here="$(cd "${BASH_SOURCE[0]%/*}" && pwd)"
+_src="${BASH_SOURCE[0]}"; case "$_src" in */*) _dir="${_src%/*}" ;; *) _dir=. ;; esac; here="$(cd "$_dir" && pwd)"   # bash puro: sem dirname externo
 # shellcheck source=../lib/common.sh
 . "$here/../lib/common.sh"
 

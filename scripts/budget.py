@@ -203,7 +203,7 @@ def cmd_init(a):
 def cmd_quote(a):
     caminho, item, custo_txt = a
     item_valido(item)
-    custo = numero(custo_txt, "custo")
+    custo = numero(custo_txt, "custo", minimo_exclusivo=True)   # cotação 0 quase sempre é leitura errada do preço
     with travar(caminho):
         d = carregar(caminho)
         if item in d["itens"] and estado(d["itens"][item]) != "pendente":

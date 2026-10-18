@@ -5,7 +5,7 @@
 # Modo real: whisper.cpp (`whisper-cli`) com o modelo em $CLO_WHISPER_MODEL
 # (padrão: ~/.cache/clo/ggml-small.bin).
 set -eu
-here="$(cd "${BASH_SOURCE[0]%/*}" && pwd)"
+_src="${BASH_SOURCE[0]}"; case "$_src" in */*) _dir="${_src%/*}" ;; *) _dir=. ;; esac; here="$(cd "$_dir" && pwd)"   # bash puro: sem dirname externo
 # shellcheck source=lib/common.sh
 . "$here/lib/common.sh"
 
@@ -14,7 +14,7 @@ for a in "$@"; do if [ "$a" = "--force" ]; then force=1; else args+=("$a"); fi; 
 set -- ${args[@]+"${args[@]}"}
 [ $# -ge 2 ] || die "uso: transcribe.sh <video> <saida.json> [--lang pt] [--force]"
 video="$(abspath "$1")"; out="$(abspath "$2")"; lang=pt
-[ "${3:-}" = "--lang" ] && lang="${4:?}"
+if [ "${3:-}" = "--lang" ]; then [ $# -ge 4 ] || die "--lang exige o idioma (ex.: pt)"; lang="$4"; fi
 refuse_existing "$out" "$force"
 
 if [ "${CLO_TRANSCRIBER:-}" = "fake" ]; then

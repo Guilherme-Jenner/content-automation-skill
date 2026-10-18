@@ -5,7 +5,7 @@
 #   crop: preenche o quadro e corta as sobras
 # A rotação gravada pelo celular (metadado) é aplicada automaticamente pelo ffmpeg.
 set -eu
-here="$(cd "${BASH_SOURCE[0]%/*}" && pwd)"
+_src="${BASH_SOURCE[0]}"; case "$_src" in */*) _dir="${_src%/*}" ;; *) _dir=. ;; esac; here="$(cd "$_dir" && pwd)"   # bash puro: sem dirname externo
 # shellcheck source=lib/common.sh
 . "$here/lib/common.sh"
 
@@ -14,7 +14,7 @@ for a in "$@"; do if [ "$a" = "--force" ]; then force=1; else args+=("$a"); fi; 
 set -- ${args[@]+"${args[@]}"}
 [ $# -ge 2 ] || die "uso: reframe-9x16.sh <video> <saida.mp4> [--mode blur|crop] [--force]"
 video="$(abspath "$1")"; out="$(abspath "$2")"; mode=blur
-if [ "${3:-}" = "--mode" ]; then mode="${4:?}"; fi
+if [ "${3:-}" = "--mode" ]; then [ $# -ge 4 ] || die "--mode exige um valor"; mode="$4"; fi
 case "$mode" in
   blur) filter="[0:v]split[a][b];[a]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,boxblur=20:5[bg];[b]scale=1080:1920:force_original_aspect_ratio=decrease[fg];[bg][fg]overlay=(W-w)/2:(H-h)/2,setsar=1[v]" ;;
   crop) filter="[0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,setsar=1[v]" ;;

@@ -6,7 +6,7 @@
 # Custo fictício por segundo: 480p=1, 720p=2, 1080p=4; +20% com áudio.
 # CLO_GEN_FAKE_OVERRUN=<id> dobra o custo efetivo dessa cena (somente testes).
 set -eu
-here="$(cd "${BASH_SOURCE[0]%/*}" && pwd)"
+_src="${BASH_SOURCE[0]}"; case "$_src" in */*) _dir="${_src%/*}" ;; *) _dir=. ;; esac; here="$(cd "$_dir" && pwd)"   # bash puro: sem dirname externo
 # shellcheck source=../lib/common.sh
 . "$here/../lib/common.sh"
 

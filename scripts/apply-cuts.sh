@@ -2,7 +2,7 @@
 # Aplica um plano de cortes APROVADO a um vídeo (remove os trechos listados).
 # Uso: apply-cuts.sh <video> <cut-plan.json> <saida.mp4> [--force]
 set -eu
-here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+_src="${BASH_SOURCE[0]}"; case "$_src" in */*) _dir="${_src%/*}" ;; *) _dir=. ;; esac; here="$(cd "$_dir" && pwd)"   # bash puro: sem dirname externo
 # shellcheck source=lib/common.sh
 . "$here/lib/common.sh"
 

@@ -44,15 +44,18 @@ def main(argv):
     cenas, erros = [], []
     for c in sb["cenas"]:
         cid = c.get("id", "")
-        if not ID_VALIDO.match(str(cid)):
+        if not ID_VALIDO.fullmatch(str(cid)):
             erros.append(f"cena com id inválido: '{cid}' (use só letras, números, _ e -)")
             continue
         prompt = (c.get("prompt") or "").strip()
         if not prompt:
             erros.append(f"cena {cid} sem prompt: peça o prompt visual dessa cena")
             continue
-        original = c["duracao_s"]
-        dur = max(DURACAO_MIN, math.ceil(original))
+        original = c.get("duracao_s")
+        if isinstance(original, bool) or not isinstance(original, (int, float)) or not math.isfinite(original) or original <= 0:
+            erros.append(f"cena {cid}: duracao_s ausente ou inválida ({original!r}); informe os segundos como número")
+            continue
+        dur = max(DURACAO_MIN, math.ceil(round(original, 3)))   # round: 6.0000001 não vira 7
         if dur > DURACAO_MAX:
             erros.append(f"cena {cid} dura {g(original)} s; o máximo é {DURACAO_MAX} s: divida a cena")
             continue

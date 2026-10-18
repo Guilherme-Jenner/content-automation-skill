@@ -10,7 +10,7 @@
 #   - a saída é normalizada para ~-14 LUFS (normalize-audio.sh).
 # Licença da música: responsabilidade do usuário. Este script não baixa nem gera música.
 set -eu
-here="$(cd "${BASH_SOURCE[0]%/*}" && pwd)"
+_src="${BASH_SOURCE[0]}"; case "$_src" in */*) _dir="${_src%/*}" ;; *) _dir=. ;; esac; here="$(cd "$_dir" && pwd)"   # bash puro: sem dirname externo
 # shellcheck source=lib/common.sh
 . "$here/lib/common.sh"
 
@@ -27,7 +27,7 @@ set -- ${args[@]+"${args[@]}"}
 [ $# -ge 3 ] || die "uso: add-soundtrack.sh <video> <musica> <saida.mp4> [--volume-db -18] [--force]"
 video="$(abspath "$1")"; music="$(abspath "$2")"; out="$(abspath "$3")"
 
-python3 -c "import sys; v = float(sys.argv[1]); sys.exit(0 if -40 <= v <= 0 else 1)" "$volume" 2>/dev/null \
+python3 -c "import re, sys; t = sys.argv[1]; ok = re.fullmatch(r'-?[0-9]+(\.[0-9]+)?', t) and -40 <= float(t) <= 0; sys.exit(0 if ok else 1)" "$volume" 2>/dev/null \
   || die "volume inválido: '$volume' (use um número de -40 a 0 dB)"
 need_cmd ffmpeg "brew install ffmpeg"
 need_cmd ffprobe "brew install ffmpeg"

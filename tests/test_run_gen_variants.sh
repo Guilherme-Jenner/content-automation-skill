@@ -123,3 +123,27 @@ test_mixed_audio_clips_are_refused_before_producing_anything() {
   [ ! -e "$d/out/final-B.mp4" ] || _fail "B foi gerada apesar de A ser recusada"
   rm -rf "$d"
 }
+
+test_a_failing_variant_does_not_stop_the_others() {
+  local d out; d="$(mktemp -d)"; _prep "$d"
+  out=$(CLO_TEST_FAIL_VARIANT=A _go "$d" 2>&1) && _fail "deveria sair com erro quando uma variante falha"
+  assert_file_exists "$d/out/final-B.mp4"
+  [ ! -e "$d/out/final-A.mp4" ] || _fail "variante que falhou não deveria ter saída"
+  assert_contains "$out" "Falharam: A" "relato das falhas"
+  assert_contains "$out" "Concluídas: B" "relato das concluídas"
+  rm -rf "$d"
+}
+
+test_all_failing_reports_none_completed() {
+  local d out; d="$(mktemp -d)"; _prep "$d" "p['variantes'].pop(); p['quantidade']=1"
+  out=$(CLO_TEST_FAIL_VARIANT=A _go "$d" 2>&1) && _fail "deveria falhar"
+  assert_contains "$out" "Concluídas: nenhuma" "mensagem clara"
+  rm -rf "$d"
+}
+
+test_no_volume_warning_when_the_plan_declares_no_volume() {
+  local d out; d="$(mktemp -d)"; _prep "$d" "del p['variantes'][1]['volume_db']"
+  out=$(_go "$d" 2>&1) || _fail "falhou"
+  case "$out" in *"qualquer que seja o volume"*) _fail "avisou sobre um volume que ninguém pediu";; esac
+  rm -rf "$d"
+}

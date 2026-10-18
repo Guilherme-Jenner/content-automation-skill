@@ -9,6 +9,7 @@ Recusa: cena que não existe no gen-plan ou no manifesto; texto vazio ou acima d
 duração < 0,8 s; tempos fora da cena; legendas sobrepostas na mesma cena; mais de 40 legendas.
 """
 import json
+import math
 import os
 import subprocess
 import sys
@@ -48,6 +49,15 @@ def main(argv):
         caps = json.load(f)
     erros = []
     validar(caps, schema, "", erros)
+    if erros:
+        for e in erros:
+            print(e, file=sys.stderr)
+        return 1
+    for item in caps["cenas"]:
+        for k, leg in enumerate(item["legendas"]):
+            for campo in ("inicio_s", "fim_s"):
+                if campo in leg and not math.isfinite(leg[campo]):
+                    erros.append(f"cena {item['cena']}, legenda {k + 1}: {campo} precisa ser um número finito")
     if erros:
         for e in erros:
             print(e, file=sys.stderr)

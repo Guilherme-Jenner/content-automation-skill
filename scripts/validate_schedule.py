@@ -62,7 +62,7 @@ def erros_do_plano(caminho, now, post_id=None):
     vistos = set()
     for i, p in enumerate(plano["posts"]):
         nome = f"posts[{i}]"
-        if not ID_VALIDO.match(p["id"]):
+        if not ID_VALIDO.fullmatch(p["id"]):
             erros.append(f"{nome}.id inválido: use só letras, números, _ e - (até 32 caracteres)")
         if p["id"].lower() in vistos:
             erros.append("ids de posts repetidos (maiúsculas e minúsculas contam como iguais)")
@@ -85,14 +85,17 @@ def erros_do_plano(caminho, now, post_id=None):
                     erros.append(f"{nome}.data_hora deve estar a pelo menos 15 minutos do momento atual")
                 elif dt > now + ANTECEDENCIA_MAXIMA:
                     erros.append(f"{nome}.data_hora deve estar a no máximo 30 dias à frente")
-        perfis = [(x["rede"], x["conta"].strip().lower()) for x in p["perfis"]]
+        perfis = [(x["rede"], x["conta"].strip().lstrip("@").lower()) for x in p["perfis"]]   # @clo.app e clo.app são o mesmo perfil
         if len(set(perfis)) != len(perfis):
             erros.append(f"{nome}.perfis tem perfil duplicado")
         if any(not conta for _, conta in perfis):
             erros.append(f"{nome}.perfis tem conta vazia")
         for h in p["hashtags"]:
-            if not re.match(r"^#\S+$", h):
+            if not re.fullmatch(r"#\S+", h):
                 erros.append(f"{nome}.hashtag inválida: '{h}' (comece com # e não use espaços)")
+        minusculas = [h.lower() for h in p["hashtags"]]
+        if len(set(minusculas)) != len(minusculas):
+            erros.append(f"{nome}.hashtags tem hashtag repetida (maiúsculas e minúsculas contam como iguais)")
         if len(p["legenda"]) > LIMITE_LEGENDA:
             erros.append(f"{nome}.legenda tem {len(p['legenda'])} caracteres (limite configurado: {LIMITE_LEGENDA}; conferir na rede)")
     return erros

@@ -10,7 +10,7 @@
 #     cancelar o anterior no agendador e rodar `schedule_log.py supersede` (ver a skill schedule-post).
 # Agendadores reais (MCP) ainda não estão implementados: só existe o `fake`.
 set -eu
-here="$(cd "${BASH_SOURCE[0]%/*}" && pwd)"
+_src="${BASH_SOURCE[0]}"; case "$_src" in */*) _dir="${_src%/*}" ;; *) _dir=. ;; esac; here="$(cd "$_dir" && pwd)"   # bash puro: sem dirname externo
 # shellcheck source=lib/common.sh
 . "$here/lib/common.sh"
 

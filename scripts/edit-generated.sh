@@ -9,17 +9,17 @@
 #   - gravação atômica; nada fica para trás se algo falhar.
 # A música é fornecida pelo usuário (a licença é responsabilidade dele); nada é baixado nem gerado aqui.
 set -eu
-here="$(cd "${BASH_SOURCE[0]%/*}" && pwd)"
+_src="${BASH_SOURCE[0]}"; case "$_src" in */*) _dir="${_src%/*}" ;; *) _dir=. ;; esac; here="$(cd "$_dir" && pwd)"   # bash puro: sem dirname externo
 # shellcheck source=lib/common.sh
 . "$here/lib/common.sh"
 
-force=0; captions=""; music=""; volume="-18"; args=()
+force=0; captions=""; music=""; vol_args=(); args=()
 while [ $# -gt 0 ]; do
   case "$1" in
     --force) force=1; shift ;;
     --captions) [ $# -ge 2 ] || die "--captions exige o captions-plan.json"; captions="$(abspath "$2")"; shift 2 ;;
     --music) [ $# -ge 2 ] || die "--music exige o arquivo de áudio"; music="$(abspath "$2")"; shift 2 ;;
-    --volume-db) [ $# -ge 2 ] || die "--volume-db exige um valor"; volume="$2"; shift 2 ;;
+    --volume-db) [ $# -ge 2 ] || die "--volume-db exige um valor"; vol_args=(--volume-db "$2"); shift 2 ;;
     *) args+=("$1"); shift ;;
   esac
 done
@@ -34,7 +34,9 @@ need_cmd python3 "brew install python"
 [ -f "$video" ] || die "vídeo não encontrado: $video"
 [ -f "$plan" ] || die "gen-plan não encontrado: $plan"
 [ -f "$manifest" ] || die "manifesto não encontrado: $manifest"
-srt_out="${out%.*}.srt"
+srt_out="$(srt_path "$out")"
+[ -d "$(dirname "$out")" ] || die "a pasta de saída não existe: $(dirname "$out")"
+python3 "$here/validate_genplan.py" "$plan" || die "plano de geração inválido: $plan"
 refuse_existing "$out" "$force"
 if [ -n "$captions" ]; then
   [ -f "$captions" ] || die "plano de legendas não encontrado: $captions"
@@ -78,7 +80,7 @@ fi
 
 # 1b) valida a música (e o volume) ANTES de qualquer etapa pesada
 if [ -n "$music" ]; then
-  "$here/add-soundtrack.sh" "$video" "$music" "$work/validacao.mp4" --volume-db "$volume" --check-only || die "a música não pode ser usada; nada foi gerado"
+  "$here/add-soundtrack.sh" "$video" "$music" "$work/validacao.mp4" ${vol_args[@]+"${vol_args[@]}"} --check-only || die "a música não pode ser usada; nada foi gerado"
 fi
 
 # 2) etapas (cada uma só começa depois da anterior ter dado certo)
@@ -89,7 +91,7 @@ if [ "$dims" != "1080,1920" ]; then
   cur="$work/0-vertical.mp4"
 fi
 if [ -n "$music" ]; then
-  "$here/add-soundtrack.sh" "$cur" "$music" "$work/1-trilha.mp4" --volume-db "$volume" --force || die "falha ao adicionar a trilha"
+  "$here/add-soundtrack.sh" "$cur" "$music" "$work/1-trilha.mp4" ${vol_args[@]+"${vol_args[@]}"} --force || die "falha ao adicionar a trilha"
   cur="$work/1-trilha.mp4"
 fi
 if [ -n "$captions" ]; then
@@ -102,6 +104,8 @@ cp "$cur" "$CURRENT_TMP"
 if [ -n "$captions" ]; then
   cp "$work/2-legendado.srt" "$CURRENT_SRT_TMP"
   mv -f "$CURRENT_SRT_TMP" "$srt_out"
+elif [ "$force" -eq 1 ]; then
+  rm -f "$srt_out"   # a saída antiga tinha legendas e a nova não tem: o .srt velho não pode ficar ao lado
 fi
 mv -f "$CURRENT_TMP" "$out"
 echo "pronto: $out"

@@ -12,6 +12,14 @@ import os
 import sys
 
 
+def achar(plano, vid):
+    for v in plano["variantes"]:
+        if v["id"] == vid:
+            return v
+    print(f"a variante '{vid}' não existe no plano", file=sys.stderr)
+    sys.exit(1)
+
+
 def main(argv):
     with open(argv[1], encoding="utf-8") as f:
         plano = json.load(f)
@@ -21,11 +29,11 @@ def main(argv):
     elif modo == "list":
         linhas = [f"{v['id']} {'sim' if v['aprovada'] else 'nao'}" for v in plano["variantes"]]
     elif modo == "get":
-        v = next(v for v in plano["variantes"] if v["id"] == argv[3])
+        v = achar(plano, argv[3])
         linhas = [f"{v['ritmo']['min_silencio_s']} {v['ritmo']['margem_s']} {v['legenda_estilo']}"]
     elif modo == "key":
         # Identidade do item de orçamento: muda se o bruto, os trechos, o ritmo ou o estilo mudarem.
-        v = next(v for v in plano["variantes"] if v["id"] == argv[3])
+        v = achar(plano, argv[3])
         carga = json.dumps(
             {
                 "bruto": os.path.normcase(os.path.normpath(os.path.abspath(plano["bruto"]))),
@@ -37,7 +45,7 @@ def main(argv):
         )
         linhas = [f"var-{v['id']}-{hashlib.sha1(carga.encode('utf-8')).hexdigest()[:8]}"]
     elif modo == "seconds":
-        v = next(v for v in plano["variantes"] if v["id"] == argv[3])
+        v = achar(plano, argv[3])
         linhas = [f"{sum(t['fim_s'] - t['inicio_s'] for t in v['trechos']):g}"]
     else:
         print(f"modo desconhecido: {modo}", file=sys.stderr)

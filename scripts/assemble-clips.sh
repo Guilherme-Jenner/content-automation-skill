@@ -6,7 +6,7 @@
 #     clipes com e sem áudio misturados são recusados (decida antes: gerar tudo com áudio ou tudo sem);
 #   - a saída é gravada de forma atômica.
 set -eu
-here="$(cd "${BASH_SOURCE[0]%/*}" && pwd)"
+_src="${BASH_SOURCE[0]}"; case "$_src" in */*) _dir="${_src%/*}" ;; *) _dir=. ;; esac; here="$(cd "$_dir" && pwd)"   # bash puro: sem dirname externo
 # shellcheck source=lib/common.sh
 . "$here/lib/common.sh"
 
@@ -42,7 +42,7 @@ filtro=""; rotulos=""; i=0
 while [ "$i" -lt "$n" ]; do
   filtro="${filtro}[${i}:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,setsar=1,fps=25[v${i}];"
   if [ "$com_audio" -gt 0 ]; then
-    filtro="${filtro}[${i}:a]aresample=48000[a${i}];"
+    filtro="${filtro}[${i}:a]aresample=48000,aformat=channel_layouts=stereo[a${i}];"
     rotulos="${rotulos}[v${i}][a${i}]"
   else
     rotulos="${rotulos}[v${i}]"

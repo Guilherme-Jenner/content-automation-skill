@@ -6,7 +6,7 @@
 #   katana_fake.sh run   <variants-plan.json> <id> <saida.mp4>      -> cria o vídeo e imprime o custo efetivo
 # CLO_KATANA_FAKE_OVERRUN=<id> faz o custo efetivo dessa variante ser o dobro da cotação (teste de estouro).
 set -eu
-here="$(cd "${BASH_SOURCE[0]%/*}" && pwd)"
+_src="${BASH_SOURCE[0]}"; case "$_src" in */*) _dir="${_src%/*}" ;; *) _dir=. ;; esac; here="$(cd "$_dir" && pwd)"   # bash puro: sem dirname externo
 # shellcheck source=../lib/common.sh
 . "$here/../lib/common.sh"
 

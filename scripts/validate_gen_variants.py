@@ -21,6 +21,8 @@ AQUI = os.path.dirname(os.path.abspath(__file__))
 SCHEMA = os.path.join(AQUI, "..", "schemas", "gen-variants-plan.schema.json")
 SCHEMA_LEGENDAS = os.path.join(AQUI, "..", "schemas", "captions-plan.schema.json")
 MAX_VARIANTES = 5
+CAMPOS_TOPO = {"quantidade", "variantes"}
+CAMPOS_VARIANTE = {"id", "cenas", "legendas", "musica", "volume_db", "gancho_repetido", "justificativa_gancho", "aprovada", "achados"}
 ID_VALIDO = re.compile(r"^[A-Za-z0-9_-]{1,32}$")
 
 
@@ -29,7 +31,8 @@ def gancho(variante):
     por_cena = {c["cena"]: c["legendas"] for c in variante["legendas"]["cenas"]}
     for cid in variante["cenas"]:
         if por_cena.get(cid):
-            return " ".join(por_cena[cid][0]["texto"].lower().split())
+            primeira = min(por_cena[cid], key=lambda leg: leg.get("inicio_s", 0.2))   # a que aparece primeiro NO TEMPO
+            return " ".join(primeira["texto"].lower().split())
     return None
 
 
@@ -43,6 +46,9 @@ def erros_das_variantes(plano, genplan):
     if erros:
         return erros
     variantes = plano["variantes"]
+    for chave in plano:
+        if chave not in CAMPOS_TOPO:
+            erros.append(f"campo desconhecido no plano: '{chave}' (confira a grafia)")
     cenas_do_plano = {c["id"] for c in genplan["cenas"]}
     if not 1 <= plano["quantidade"] <= MAX_VARIANTES:
         erros.append(f"quantidade deve estar entre 1 e {MAX_VARIANTES} (recebido {plano['quantidade']})")
@@ -56,6 +62,21 @@ def erros_das_variantes(plano, genplan):
         if v["id"].lower() in vistos:
             erros.append("ids de variantes repetidos (maiúsculas e minúsculas contam como iguais)")
         vistos.add(v["id"].lower())
+        for chave in v:
+            if chave not in CAMPOS_VARIANTE:
+                erros.append(f"{nome}: campo desconhecido '{chave}' (confira a grafia)")
+        if "volume_db" in v and "musica" not in v:
+            erros.append(f"{nome}: volume_db sem musica (o volume só vale para a trilha)")
+        if "musica" in v:
+            m = v["musica"]
+            if os.name == "nt" and m.startswith("/") and not m.startswith("//"):
+                erros.append(f"{nome}: caminho '{m}' não vale no Windows; use o formato C:/pasta/arquivo.mp3")
+            elif not os.path.isabs(m) and not re.match(r"^[A-Za-z]:[\\/]", m):
+                if os.path.normpath(m).split(os.sep)[0] == "..":
+                    erros.append(f"{nome}: a música relativa sai da pasta do plano ('{m}'); coloque o arquivo ao lado do plano ou use caminho absoluto")
+        nomes_cenas = [c["cena"] for c in v["legendas"].get("cenas", []) if isinstance(c, dict) and "cena" in c]
+        if len(set(nomes_cenas)) != len(nomes_cenas):
+            erros.append(f"{nome}: a mesma cena aparece duas vezes em legendas.cenas")
         if len(set(v["cenas"])) != len(v["cenas"]):
             erros.append(f"{nome}: cena repetida na mesma variante")
         for cid in v["cenas"]:

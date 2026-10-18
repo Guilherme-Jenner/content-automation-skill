@@ -2,7 +2,7 @@
 # Normaliza o áudio para ~-14 LUFS (loudnorm em duas passagens). O vídeo é copiado sem re-encode.
 # Uso: normalize-audio.sh <video> <saida.mp4> [--force]
 set -eu
-here="$(cd "${BASH_SOURCE[0]%/*}" && pwd)"
+_src="${BASH_SOURCE[0]}"; case "$_src" in */*) _dir="${_src%/*}" ;; *) _dir=. ;; esac; here="$(cd "$_dir" && pwd)"   # bash puro: sem dirname externo
 # shellcheck source=lib/common.sh
 . "$here/lib/common.sh"
 
@@ -28,6 +28,10 @@ t = sys.stdin.read()
 m = json.loads(re.search(r'\{[^{}]*\"input_i\"[^{}]*\}', t, re.S).group(0))
 print(f\"measured_I={m['input_i']}:measured_TP={m['input_tp']}:measured_LRA={m['input_lra']}:measured_thresh={m['input_thresh']}:offset={m['target_offset']}\")")" \
   || die "não foi possível ler a medição de loudness"
+
+case "$params" in
+  *measured_I=-inf*|*measured_I=-Inf*) die "o áudio de $video é silêncio total (nada para normalizar): $video" ;;
+esac
 
 tmp="$(dirname "$out")/.$(basename "$out").partial.mp4"
 trap 'rm -f "$tmp"' EXIT

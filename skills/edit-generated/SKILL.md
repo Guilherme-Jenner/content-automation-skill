@@ -41,7 +41,7 @@ Depois, confira o resultado com o usuário (legendas legíveis, tempos, volume d
 ## 4. Variantes: de 1 a 5 vídeos finais com os mesmos clipes
 Se o usuário quer mais de um vídeo final, cada variante recombina os **clipes já gerados**: outra seleção e ordem de cenas, outras legendas, outro estilo e, se quiser, outra trilha. Isso **não gasta crédito** e não mexe no teto. Clipes **novos** custam crédito: são da skill `generate-clips`, com teto e confirmação.
 - Máximo de 5 variantes. Cada cena entra no máximo uma vez por variante; variantes idênticas são recusadas.
-- O **gancho** de uma variante é a primeira legenda da primeira cena. Por padrão, os ganchos são diferentes entre as variantes; se não houver outro gancho bom, repita com `gancho_repetido: true` e `justificativa_gancho`, e varie o resto.
+- O **gancho** de uma variante é a legenda que aparece primeiro (menor `inicio_s`) na primeira cena que tem legenda. Por padrão, os ganchos são diferentes entre as variantes; se não houver outro gancho bom, repita com `gancho_repetido: true` e `justificativa_gancho`, e varie o resto.
 - Cada variante cita os achados de `research.json` que a justificam (`achados`), e só roda com `"aprovada": true` depois da aprovação explícita do usuário **por variante**.
 - Grave o `gen-variants-plan.json` (formato em `schemas/gen-variants-plan.schema.json`; `legendas` tem o formato do `captions-plan.json`; `musica` é opcional e relativa à pasta do plano):
 ```json
