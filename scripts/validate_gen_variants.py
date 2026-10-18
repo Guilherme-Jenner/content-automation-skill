@@ -51,7 +51,7 @@ def erros_das_variantes(plano, genplan):
     vistos = set()
     for i, v in enumerate(variantes):
         nome = f"variantes[{i}]"
-        if not ID_VALIDO.match(v["id"]):
+        if not ID_VALIDO.fullmatch(v["id"]):   # fullmatch: com match, "B\n" passaria ($ casa antes da quebra final)
             erros.append(f"{nome}.id inválido: use só letras, números, _ e - (até 32 caracteres)")
         if v["id"].lower() in vistos:
             erros.append("ids de variantes repetidos (maiúsculas e minúsculas contam como iguais)")

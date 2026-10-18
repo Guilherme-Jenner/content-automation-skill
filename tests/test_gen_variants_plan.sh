@@ -99,3 +99,8 @@ test_info_music_resolves_relative_to_the_plan() {
   assert_contains "$m" "$(basename "$d")" "dentro da pasta do plano"
   rm -rf "$d"
 }
+
+test_id_with_trailing_newline_is_rejected() {
+  local out
+  out=$(_bad "p['variantes'][1]['id']='B\n'") && _fail "id com quebra de linha aceito"; assert_contains "$out" "id" "mensagem"
+}

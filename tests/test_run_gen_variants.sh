@@ -112,3 +112,14 @@ test_abspath_keeps_windows_drive_paths() {
   assert_eq 'C:\Users\x\a.mp4' "$(abspath 'C:\Users\x\a.mp4')" "caminho com letra de unidade já é absoluto"
   assert_eq 'D:/x/a.mp4' "$(abspath 'D:/x/a.mp4')" "com barra normal"
 }
+
+test_mixed_audio_clips_are_refused_before_producing_anything() {
+  local d out; d="$(mktemp -d)"; _prep "$d" "p['variantes'][1]['cenas']=['c1']; p['variantes'][1]['legendas']['cenas']=[{'cena':'c1','legendas':[{'texto':'So o primeiro'}]}]; p['variantes'][1].pop('musica'); p['variantes'][1].pop('volume_db')"
+  ffmpeg -v error -y -f lavfi -i "color=c=red:size=480x854:rate=25:duration=4" -f lavfi -i "sine=frequency=330:duration=4" -shortest -c:v libx264 -pix_fmt yuv420p -c:a aac "$d/w/clips/c1.mp4" </dev/null
+  python3 "$ROOT/scripts/clips_manifest.py" add "$d/w/clips-manifest.json" c1 clips/c1.mp4 1 "$(python3 "$ROOT/scripts/genplan_info.py" "$d/g.json" key c1)" fake >/dev/null
+  out=$(_go "$d" 2>&1) && _fail "clipes com e sem áudio misturados deveriam recusar o lote"
+  assert_contains "$out" "A" "cita a variante A"
+  assert_contains "$out" "áudio" "explica o motivo"
+  [ ! -e "$d/out/final-B.mp4" ] || _fail "B foi gerada apesar de A ser recusada"
+  rm -rf "$d"
+}

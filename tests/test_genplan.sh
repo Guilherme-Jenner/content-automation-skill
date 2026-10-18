@@ -96,3 +96,15 @@ test_default_resolution_and_audio_off() {
   assert_eq "True" "$(json_get "$d/h.json" "d['audio']")" "áudio ligado"
   rm -rf "$d"
 }
+
+test_scene_id_with_trailing_newline_is_rejected() {
+  local d out; d="$(mktemp -d)"
+  python3 - "$d/g.json" <<'PY'
+import json, sys
+json.dump({"modelo": "seedance_2_5", "aspecto": "9:16", "resolucao": "480p", "audio": False,
+           "cenas": [{"id": "c1\n", "prompt": "a", "duracao_s": 4}]}, open(sys.argv[1], "w", encoding="utf-8"))
+PY
+  out=$(python3 "$ROOT/scripts/validate_genplan.py" "$d/g.json" 2>&1) && _fail "id com quebra de linha aceito"
+  assert_contains "$out" "id" "mensagem"
+  rm -rf "$d"
+}

@@ -36,7 +36,7 @@ def erros_do_genplan(plano):
     vistos = set()
     for i, c in enumerate(cenas):
         nome = f"cenas[{i}]"
-        if not ID_VALIDO.match(c["id"]):
+        if not ID_VALIDO.fullmatch(c["id"]):
             erros.append(f"{nome}.id inválido: use só letras, números, _ e - (até 32 caracteres)")
         if c["id"].lower() in vistos:
             erros.append("ids de cenas repetidos (maiúsculas e minúsculas contam como iguais)")

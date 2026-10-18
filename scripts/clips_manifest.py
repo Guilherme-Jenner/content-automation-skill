@@ -45,7 +45,7 @@ def carregar(manifesto):
 
 
 def cmd_add(manifesto, cid, arquivo, custo, item, origem, job_id=None):
-    if not ID_VALIDO.match(cid):
+    if not ID_VALIDO.fullmatch(cid):
         print(f"id de cena inválido: '{cid}'", file=sys.stderr)
         return 1
     base = os.path.dirname(os.path.abspath(manifesto))

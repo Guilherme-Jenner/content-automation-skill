@@ -59,6 +59,18 @@ while IFS= read -r id; do
   lista="$(python3 "$here/clips_manifest.py" verify "$manifest" "$work/$id/gen-plan.json")" \
     || die "variante $id: os clipes não conferem com o manifesto e o plano; gere/registre de novo"
   [ -n "$primeiro_clipe" ] || primeiro_clipe="$(printf '%s\n' "$lista" | head -1)"
+  # clipes com e sem áudio não se misturam (assemble-clips.sh recusaria só na produção, com o lote já parcial)
+  n_clipes=0; n_audio=0
+  while IFS= read -r clipe; do
+    [ -n "$clipe" ] || continue
+    n_clipes=$((n_clipes + 1))
+    if [ -n "$(ffprobe -v error -select_streams a -show_entries stream=codec_type -of csv=p=0 "$clipe" </dev/null)" ]; then n_audio=$((n_audio + 1)); fi
+  done <<EOC
+$lista
+EOC
+  if [ "$n_audio" -ne 0 ] && [ "$n_audio" -ne "$n_clipes" ]; then
+    die "variante $id: $n_audio de $n_clipes clipes têm áudio; não misture clipes com e sem áudio na mesma variante (gere todos com ou todos sem)"
+  fi
   python3 "$here/captions_to_transcript.py" "$work/$id/captions.json" "$work/$id/gen-plan.json" "$manifest" > /dev/null \
     || die "variante $id: as legendas não conferem com as cenas e os clipes; nada foi gerado"
   musica="$(python3 "$here/gen_variant_info.py" "$plan" music "$id")"
