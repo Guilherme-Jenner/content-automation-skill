@@ -1,7 +1,7 @@
 import React from 'react';
+import {agruparPalavras, grupoAtual, Palavra} from './grupos';
 import {AbsoluteFill, OffthreadVideo, interpolate, spring, staticFile, useCurrentFrame, useVideoConfig} from 'remotion';
 
-export type Palavra = {texto: string; inicio_s: number; fim_s: number};
 
 // Contrato de scripts/to_remotion_input.py (schemas/remotion-input.schema.json) mais a duração em segundos,
 // que scripts/render-remotion.sh mede no vídeo e acrescenta.
@@ -32,11 +32,7 @@ export const CaptionedVideo: React.FC<CaptionedVideoProps> = ({video, palavras, 
   const agora = frame / fps;
   const e = ESTILOS[estilo] ?? ESTILOS.padrao;
 
-  const grupos: Palavra[][] = [];
-  for (let i = 0; i < palavras.length; i += e.palavrasPorGrupo) {
-    grupos.push(palavras.slice(i, i + e.palavrasPorGrupo));
-  }
-  const grupo = grupos.find((g) => agora >= g[0].inicio_s && agora <= g[g.length - 1].fim_s + FOLGA_S);
+  const grupo = grupoAtual(agruparPalavras(palavras, e.palavrasPorGrupo), agora, FOLGA_S);
 
   return (
     <AbsoluteFill style={{backgroundColor: 'black'}}>
@@ -48,7 +44,7 @@ export const CaptionedVideo: React.FC<CaptionedVideoProps> = ({video, palavras, 
               display: 'flex',
               flexWrap: 'wrap',
               justifyContent: 'center',
-              gap: '0 22px',
+              gap: '0 30px',
               maxWidth: 940,
               padding: e.fundo === 'transparent' ? 0 : '14px 28px',
               borderRadius: 18,
@@ -64,7 +60,7 @@ export const CaptionedVideo: React.FC<CaptionedVideoProps> = ({video, palavras, 
             {grupo.map((p, i) => {
               const ativa = agora >= p.inicio_s && agora <= p.fim_s;
               const entrada = spring({frame: frame - Math.round(p.inicio_s * fps), fps, config: {damping: 14, stiffness: 180}});
-              const escala = ativa ? interpolate(entrada, [0, 1], [0.85, 1.08]) : 1;
+              const escala = ativa ? interpolate(entrada, [0, 1], [0.9, 1.04]) : 1;
               return (
                 <span
                   key={`${p.inicio_s}-${i}`}

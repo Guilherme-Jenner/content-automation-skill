@@ -6,7 +6,7 @@
    ```bash
    brew install ffmpeg whisper-cpp
    ```
-   Para o acabamento com Remotion (opcional): `brew install node`.
+   Para o acabamento com Remotion (opcional): `brew install node` e, uma vez, `bash scripts/setup-remotion.sh` (baixa pacotes e um Chrome headless para `~/.cache/clo/remotion`; sobrevive às atualizações do plugin).
 3. Modelo do Whisper (uma vez):
    ```bash
    mkdir -p ~/.cache/clo

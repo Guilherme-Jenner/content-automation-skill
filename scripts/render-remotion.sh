@@ -3,7 +3,8 @@
 # Uso: render-remotion.sh <remotion-input.json> <video> <saida.mp4> [--force] [--check-only]
 #   - o JSON segue schemas/remotion-input.schema.json (gerado por to_remotion_input.py); estilos: padrao, destaque, discreto;
 #   - --check-only valida o contrato, o vídeo e a saída sem precisar do Node e sem renderizar;
-#   - o render usa o projeto em remotion/ (instale uma vez: cd remotion && npm install) e grava de forma atômica.
+#   - o render usa o projeto em remotion/ do plugin; as dependências ficam numa pasta estável do usuário (rode antes, uma vez:
+#     bash scripts/setup-remotion.sh, que faz o npm install), e as fontes são copiadas de novo a cada render; grava de forma atômica.
 set -eu
 _src="${BASH_SOURCE[0]}"; case "$_src" in */*) _dir="${_src%/*}" ;; *) _dir=. ;; esac; here="$(cd "$_dir" && pwd)"   # bash puro: sem dirname externo
 # shellcheck source=lib/common.sh
@@ -21,6 +22,7 @@ set -- ${args[@]+"${args[@]}"}
 [ $# -ge 3 ] || die "uso: render-remotion.sh <remotion-input.json> <video> <saida.mp4> [--force] [--check-only]"
 input="$(abspath "$1")"; video="$(abspath "$2")"; out="$(abspath "$3")"
 project="$here/../remotion"
+home="${CLO_REMOTION_HOME:-$HOME/.cache/clo/remotion}"   # dependências instaladas por setup-remotion.sh (fora do plugin)
 
 if [ "$check_only" -eq 0 ]; then
   need_cmd node "brew install node"
@@ -49,7 +51,7 @@ if [ "$check_only" -eq 1 ]; then
 fi
 
 need_cmd ffprobe "brew install ffmpeg"
-[ -d "$project/node_modules" ] || die "as dependências do Remotion não estão instaladas: rode (cd \"$project\" && npm install)"
+[ -d "$home/node_modules" ] || die "as dependências do Remotion não estão instaladas: rode bash \"$here/setup-remotion.sh\" (executa npm install em $home)"
 dur="$(probe_duration "$video")"
 
 work="$(tmpdir)"
@@ -67,7 +69,12 @@ with open(sys.argv[3], "wb") as f:
     f.write(json.dumps(d, ensure_ascii=False).encode("utf-8"))
 PY
 echo "renderizando: $resumo"
-(cd "$project" && npx remotion render src/index.ts CaptionedVideo "$CURRENT_TMP" --props="$work/props.json" --public-dir="$work/public" --codec=h264) \
+# fontes sempre do plugin atual (o plugin é atualizado; as dependências em $home continuam)
+mkdir -p "$home"
+rm -rf "$home/src"
+cp -R "$project/src" "$home/src"
+cp "$project/tsconfig.json" "$project/package.json" "$home/"
+(cd "$home" && npx remotion render src/index.ts CaptionedVideo "$CURRENT_TMP" --props="$work/props.json" --public-dir="$work/public" --codec=h264) \
   || die "o render do Remotion falhou (veja a mensagem acima)"
 [ -s "$CURRENT_TMP" ] || die "o Remotion não gerou o vídeo"
 mv -f "$CURRENT_TMP" "$out"

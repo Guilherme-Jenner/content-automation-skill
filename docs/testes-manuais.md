@@ -12,3 +12,9 @@ Os testes automáticos nunca chamam serviços pagos nem o Whisper real. Estes ro
 
 ## Edição do gravado ponta a ponta
 Veja `skills/edit-recorded/SKILL.md`. Use um vídeo real do celular (vertical e horizontal) e confira legenda, áudio e o corte dos silêncios.
+
+## Remotion (legenda animada) no Mac
+1. `brew install node` e `bash scripts/setup-remotion.sh` (aceite o download dos pacotes).
+2. Gere um vídeo vertical curto de teste: `ffmpeg -f lavfi -i "gradients=s=1080x1920:d=5:r=30" -f lavfi -i "sine=frequency=330:duration=5" -shortest -c:v libx264 -pix_fmt yuv420p -c:a aac teste.mp4`.
+3. Crie `t.json` (`{"idioma":"pt","segmentos":[{"inicio_s":0.3,"fim_s":2.4,"texto":"Sua rotina vive bagunçada hoje"}]}`), rode `python3 scripts/to_remotion_input.py t.json teste.mp4 > in.json` e `bash scripts/render-remotion.sh in.json teste.mp4 saida.mp4`.
+4. Confira: 1080x1920, 5 s, com áudio, legenda palavra a palavra com a palavra ativa em amarelo e acentos corretos. Repita trocando `"estilo"` em `in.json` por `destaque` e `discreto`.

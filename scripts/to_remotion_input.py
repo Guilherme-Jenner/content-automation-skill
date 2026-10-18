@@ -34,8 +34,8 @@ def main(argv):
             pos = fim
 
     saida = {"video": video, "largura": 1080, "altura": 1920, "fps": fps, "palavras": palavras, "estilo": "padrao"}
-    json.dump(saida, sys.stdout, ensure_ascii=False, indent=2)
-    print()
+    # Bytes UTF-8 + LF, igual nos outros scripts: o console do Windows usa outra codificação e quebraria os acentos.
+    sys.stdout.buffer.write((json.dumps(saida, ensure_ascii=False, indent=2) + "\n").encode("utf-8"))
     return 0
 
 
