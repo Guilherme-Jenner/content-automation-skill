@@ -4,5 +4,6 @@
   "description": "Pipeline de conteúdo em vídeo da CLO: pesquisa, roteiro, geração e edição (ffmpeg, Whisper, Katana, Remotion) e agendamento com aprovação humana.",
   "author": { "name": "CLO" },
   "license": "MIT",
+  "repository": "https://github.com/Guilherme-Jenner/content-automation-skill",
   "keywords": ["video", "content", "ffmpeg", "higgsfield", "shorts"]
 }

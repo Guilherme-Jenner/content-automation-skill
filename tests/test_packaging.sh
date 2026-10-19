@@ -62,3 +62,14 @@ test_no_local_paths_or_secrets_in_tracked_files() {
   hits=$(cd "$ROOT" && git ls-files 2>/dev/null | grep -v '^tests/' | xargs grep -lE 'C:\\Users\\|/c/Users/|guilherme|clozetaplication|api[_-]?key *[:=]|Bearer [A-Za-z0-9]' 2>/dev/null | head -5) || true
   [ -z "$hits" ] || _fail "arquivos com caminho local ou dado pessoal: $hits"
 }
+
+test_guides_use_the_real_repository_address() {
+  local alvo="Guilherme-Jenner/content-automation-skill"
+  assert_contains "$(cat "$ROOT/docs/guia-mac-socio.md")" "/plugin marketplace add $alvo" "guia do Mac com o endereço real"
+  assert_contains "$(cat "$ROOT/docs/publicacao.md")" "claude plugin marketplace add $alvo" "guia de publicação com o endereço real"
+  python3 - "$ROOT/.claude-plugin/plugin.json" "$alvo" <<'PY' || _fail "plugin.json sem o campo repository correto"
+import json, sys
+assert json.load(open(sys.argv[1], encoding="utf-8"))["repository"] == "https://github.com/" + sys.argv[2]
+PY
+  case "$(cat "$ROOT/docs/guia-mac-socio.md" "$ROOT/docs/publicacao.md")" in *"OWNER/REPO"*) _fail "ainda há o marcador OWNER/REPO";; esac
+}

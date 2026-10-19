@@ -5,7 +5,7 @@ O repositório é, ao mesmo tempo, o **plugin** e o **marketplace** `clo-tools` 
 ## Publicar pela primeira vez
 1. `claude plugin validate .` na raiz do repositório (o validador não pega tudo: teste a instalação de verdade).
 2. Faça o push para o GitHub.
-3. Numa máquina limpa (ou outra conta): `claude plugin marketplace add OWNER/REPO`, depois `claude plugin install clo-content-pipeline@clo-tools` e `claude plugin list`.
+3. Numa máquina limpa (ou outra conta): `claude plugin marketplace add Guilherme-Jenner/content-automation-skill`, depois `claude plugin install clo-content-pipeline@clo-tools` e `claude plugin list`.
 4. Se o repositório for privado (**repositório privado**), cada pessoa precisa de credenciais do GitHub na máquina (`gh auth login` e `gh auth setup-git`); sem elas a atualização falha em silêncio e a cópia antiga continua funcionando.
 
 ## Lançar uma atualização (por exemplo, quando o agendamento ficar pronto)

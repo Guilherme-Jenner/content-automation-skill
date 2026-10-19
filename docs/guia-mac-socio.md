@@ -17,10 +17,10 @@
 ## 2. Instalar o plugin
 Dentro do Claude Code:
 ```
-/plugin marketplace add OWNER/REPO
+/plugin marketplace add Guilherme-Jenner/content-automation-skill
 /plugin install clo-content-pipeline@clo-tools
 ```
-(`OWNER/REPO` é o endereço do repositório no GitHub. Se o repositório for privado, entre antes no GitHub pelo terminal com `gh auth login` e depois `gh auth setup-git`, para o Claude Code conseguir baixar e atualizar.)
+(Esse é o endereço do repositório no GitHub. Se o repositório for privado, entre antes no GitHub pelo terminal com `gh auth login` e depois `gh auth setup-git`, para o Claude Code conseguir baixar e atualizar.)
 
 Para conferir, no terminal: `claude plugin list`.
 
