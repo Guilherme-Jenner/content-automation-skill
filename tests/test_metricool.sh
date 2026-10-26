@@ -125,3 +125,15 @@ test_schedule_metricool_needs_approval_urls_and_releases_on_bad_payload() {
   assert_eq "livre" "$(python3 "$ROOT/scripts/schedule_log.py" status "$d/plan.json" p2 "$d/.schedule-log.json")" "livre após falha do payload"
   rm -rf "$d"
 }
+
+test_tiktok_photo_title_fits_utf16_limit_and_music_is_on() {
+  local out
+  out=$(PYTHONPATH="$ROOT/scripts" python3 - <<'PY'
+from metricool_payload import titulo_tiktok
+t = titulo_tiktok("Salva pra não esquecer 📌 Qual dica você já usa? Aprenda a montar looks assim no app CLO (link na bio)")
+print(len(t.encode("utf-16-le")) // 2 <= 90, t.endswith("app"))
+PY
+)
+  assert_eq "True True" "$out" "título do Modo Foto: até 90 unidades UTF-16 (emoji conta 2), cortado em palavra inteira"
+  assert_contains "$(grep -n 'autoAddMusic' "$ROOT/scripts/metricool_payload.py")" "True" "música recomendada ligada no Modo Foto"
+}

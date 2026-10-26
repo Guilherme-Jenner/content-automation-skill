@@ -32,6 +32,17 @@ class Recusa(Exception):
     pass
 
 
+
+def titulo_tiktok(legenda, limite=90):
+    """Título do Modo Foto: o TikTok limita a 90 unidades UTF-16 (um emoji conta 2); corta em palavra inteira, com folga."""
+    palavras, atual = " ".join(legenda.split()).split(" "), ""
+    for p in palavras:
+        cand = (atual + " " + p).strip()
+        if len(cand.encode("utf-16-le")) // 2 > limite - 5:
+            break
+        atual = cand
+    return atual
+
 def midias_do_post(post):
     return [post["video"]] if "video" in post else list(post["imagens"])
 
@@ -83,7 +94,8 @@ def montar(post, urls, blog_id, modo, fuso=FUSO):
         info["tiktokData"] = {"privacyOption": "SELF_ONLY" if modo == "teste" else "PUBLIC_TO_EVERYONE", "isAigc": ia}
         if carrossel:
             info["tiktokData"]["photoCoverIndex"] = 0
-            info["tiktokData"]["title"] = " ".join(post["legenda"].split())[:90]
+            info["tiktokData"]["autoAddMusic"] = True   # TikTok escolhe uma música recomendada (não dá para escolher a faixa pela API)
+            info["tiktokData"]["title"] = titulo_tiktok(post["legenda"])
             avisos.append("TikTok em Modo Foto: a ferramenta aceita imagens, mas a publicação não foi executada; valide em modo teste (SELF_ONLY). "
                           "A declaração de IA (isAigc) não vale para post só de fotos no TikTok (a ferramenta a ignora): confira a regra da rede.")
     if modo == "teste":
