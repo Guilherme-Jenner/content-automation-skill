@@ -50,6 +50,8 @@ def sha256_conteudo(post):
     }
     if "conteudo_ia" in post:   # só entra no hash quando declarado: aprovações antigas continuam valendo
         campos["conteudo_ia"] = post["conteudo_ia"]
+    if post.get("titulo_tiktok"):   # idem: só entra no hash quando o usuário pediu um título
+        campos["titulo_tiktok"] = post["titulo_tiktok"]
     canon = json.dumps(campos, sort_keys=True, ensure_ascii=False)
     return hashlib.sha256(canon.encode("utf-8")).hexdigest()
 

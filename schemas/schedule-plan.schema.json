@@ -12,6 +12,7 @@
           "video": {"type": "string"},
           "imagens": {"type": "array", "minItems": 2, "items": {"type": "string"}},
           "conteudo_ia": {"type": "boolean"},
+          "titulo_tiktok": {"type": "string"},
           "legenda": {"type": "string"},
           "hashtags": {"type": "array", "items": {"type": "string"}},
           "perfis": {

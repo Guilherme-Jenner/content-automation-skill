@@ -98,3 +98,36 @@ test_make_slideshow_refuses_without_approval_and_invalid_plan() {
   assert_fails bash "$ROOT/scripts/make-slideshow.sh" "$d/p.json" "$d/out"
   rm -rf "$d"
 }
+
+# hook fixo (opcional): mesmo hook (formato e texto) em todas as variantes; o resto (fotos, ordem, texto dos demais slides) varia
+_HF="p['hook_fixo']=True; p['variantes'][1]['formato_hook']='pergunta'; p['variantes'][1]['slides'][0]['texto']='Sua rotina vive bagunçada?'"
+
+test_slideshow_hook_fixo_allows_same_hook_with_other_photos_and_order() {
+  _sbad "$_HF" >/dev/null || _fail "hook_fixo com o mesmo hook e o resto diferente deveria passar sem justificativa"
+  _sbad "$_HF; p['variantes'][1]['slides'][0]['foto']='f1'" >/dev/null \
+    || _fail "hook_fixo com outra foto de hook deveria passar"
+}
+
+test_slideshow_hook_fixo_requires_same_hook_everywhere() {
+  local out
+  out=$(_sbad "p['hook_fixo']=True; p['variantes'][1]['formato_hook']='pergunta'") && _fail "hook_fixo com texto de hook diferente aceito"
+  assert_contains "$out" "hook_fixo" "texto de hook diferente"
+  out=$(_sbad "p['hook_fixo']=True; p['variantes'][1]['slides'][0]['texto']='Sua rotina vive bagunçada?'") && _fail "hook_fixo com formato_hook diferente aceito"
+  assert_contains "$out" "hook_fixo" "formato_hook diferente"
+  out=$(_sbad "p['hook_fixo']='sim'") && _fail "hook_fixo que não é booleano aceito"
+}
+
+test_slideshow_hook_fixo_still_refuses_identical_variants_and_default_is_unchanged() {
+  local out
+  out=$(_sbad "$_HF; p['variantes'][1]['slides']=json.loads(json.dumps(p['variantes'][0]['slides']))") && _fail "variantes idênticas aceitas com hook_fixo"
+  assert_contains "$out" "idêntica" "variante idêntica"
+  out=$(_sbad "p['hook_fixo']=False; p['variantes'][1]['formato_hook']='pergunta'") && _fail "sem hook_fixo, formato repetido sem justificativa deveria ser recusado"
+  assert_contains "$out" "justificativa" "padrão inalterado"
+}
+
+test_slideshow_skill_documents_both_hook_modes() {
+  local s; s="$(cat "$ROOT/skills/create-slideshow/SKILL.md")"
+  assert_contains "$s" "hook_fixo" "skill documenta o hook fixo"
+  assert_contains "$s" "estrutura viral" "skill documenta o modo com roteiro novo e estrutura viral"
+  assert_contains "$s" "opcional" "hook fixo é opcional"
+}

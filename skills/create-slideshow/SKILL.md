@@ -33,14 +33,17 @@ Toda variante é uma sequência de 3 a 10 slides, uma foto por slide, sem repeti
 `formato_hook` (como abre): `pergunta`, `resultado`, `polemica`, `erro_comum`, `historia`, `numero`.
 `formato_anuncio` (como o app aparece): `demo`, `antes_depois`, `lista`, `depoimento`, `passo_a_passo`.
 
-**A graça é reaproveitar as mesmas fotos:** com 10 fotos dá para fazer até 5 slideshows diferentes só reordenando e escolhendo quais fotos entram, trocando o hook e a forma de anunciar o app. Cada variante deve ter hook diferente (outro `formato_hook`) e uma ordem/seleção de fotos claramente diferente. Se faltar hook bom, repita o formato com `gancho_repetido: true` e `justificativa_gancho`, **e diga ao usuário**. Escolha a foto mais forte para o `hook` e a que mostra o app para o `app`.
+**A graça é reaproveitar as mesmas fotos:** com 10 fotos dá para fazer até 5 slideshows diferentes só reordenando e escolhendo quais fotos entram. Há **dois modos de variar, e o usuário escolhe** (pergunte uma vez, antes de montar as variantes):
+- **Hook novo em cada variante (padrão):** monte outro roteiro com **estrutura viral** a cada versão, trocando o hook (outro `formato_hook`) e a forma de anunciar o app, com ordem e seleção de fotos claramente diferentes. Se faltar hook bom, repita o formato com `gancho_repetido: true` e `justificativa_gancho`, **e diga ao usuário**.
+- **Hook fixo (opcional):** o usuário quer manter o mesmo hook e mudar só o resto (fotos, ordem, texto dos demais slides). Marque `"hook_fixo": true` no topo do plano: todas as variantes passam a ter o **mesmo `formato_hook` e o mesmo texto de hook**, sem `gancho_repetido` nem justificativa. A foto do hook pode mudar. As variantes ainda não podem ser idênticas entre si (mesma ordem de fotos e mesmos textos).
+Escolha a foto mais forte para o `hook` e a que mostra o app para o `app`.
 
 Texto de cada slide: curto, no máximo **3 linhas na tela** (cerca de 51 caracteres no estilo `padrao`, 39 no `destaque`, 63 no `discreto`; o script recusa o que não couber). Duração padrão 2,5 s por slide (`duracao_s`, de 1,5 a 6 s; máximo de 60 s no vídeo). Vídeo gerado só com fotos reais do usuário; se a foto tiver conteúdo de IA, lembre de declarar ao publicar.
 
 ## 3. Plano
 Escreva `slideshow-plan.json` no diretório de trabalho (formato em `${CLAUDE_PLUGIN_ROOT}/schemas/slideshow-plan.schema.json`; 1 a 5 variantes, `quantidade` igual ao número delas, `aprovada: false`):
 ```json
-{"quantidade": 2, "estilo": "destaque",
+{"quantidade": 2, "estilo": "destaque", "hook_fixo": false,
  "fotos": [{"id": "f1", "arquivo": "fotos/tela-agenda.jpg", "descricao": "agenda semanal organizada no app"}, "..."],
  "variantes": [
    {"id": "A", "formato_hook": "pergunta", "formato_anuncio": "demo", "aprovada": false,
@@ -51,7 +54,7 @@ Escreva `slideshow-plan.json` no diretório de trabalho (formato em `${CLAUDE_PL
       {"foto": "f7", "papel": "cta", "texto": "Baixe o Clo App"}]},
    {"id": "B", "formato_hook": "resultado", "formato_anuncio": "antes_depois", "...": "..."}]}
 ```
-Opcional por variante: `musica` (arquivo do usuário) e `volume_db` (-40 a 0). Valide antes de mostrar e corrija até passar:
+Opcional no topo: `hook_fixo` (ver acima). Opcional por variante: `musica` (arquivo do usuário) e `volume_db` (-40 a 0). Valide antes de mostrar e corrija até passar:
 ```bash
 python3 "${CLAUDE_PLUGIN_ROOT}/scripts/validate_slideshow.py" "<diretorio de trabalho>/slideshow-plan.json"
 ```

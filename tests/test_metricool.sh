@@ -126,14 +126,46 @@ test_schedule_metricool_needs_approval_urls_and_releases_on_bad_payload() {
   rm -rf "$d"
 }
 
-test_tiktok_photo_title_fits_utf16_limit_and_music_is_on() {
-  local out
-  out=$(PYTHONPATH="$ROOT/scripts" python3 - <<'PY'
-from metricool_payload import titulo_tiktok
-t = titulo_tiktok("Salva pra não esquecer 📌 Qual dica você já usa? Aprenda a montar looks assim no app CLO (link na bio)")
-print(len(t.encode("utf-16-le")) // 2 <= 90, t.endswith("app"))
-PY
-)
-  assert_eq "True True" "$out" "título do Modo Foto: até 90 unidades UTF-16 (emoji conta 2), cortado em palavra inteira"
+test_tiktok_photo_title_is_empty_by_default_and_only_when_asked() {
+  local d out; d="$(mktemp -d)"; _mq "$d"
+  out=$(_mp plano "$d/plan.json" p2 --urls "$d/urls-p2.json" --blog-id 123 --modo real) || _fail "payload falhou: $out"
+  assert_eq "False" "$(printf '%s' "$out" | python3 -c "import json,sys; d=json.load(sys.stdin); print('title' in json.loads(d['argumentos']['info'])['tiktokData'])")" "sem título por padrão"
   assert_contains "$(grep -n 'autoAddMusic' "$ROOT/scripts/metricool_payload.py")" "True" "música recomendada ligada no Modo Foto"
+  python3 - "$d" <<'PY'
+import json, os, sys
+f = os.path.join(sys.argv[1], "plan.json"); p = json.load(open(f, encoding="utf-8")); p["posts"][1]["titulo_tiktok"] = "Looks em 5 passos"
+json.dump(p, open(f, "w", encoding="utf-8"), ensure_ascii=False)
+PY
+  out=$(_mp plano "$d/plan.json" p2 --urls "$d/urls-p2.json" --blog-id 123 --modo real) || _fail "payload com título falhou: $out"
+  assert_eq "Looks em 5 passos" "$(printf '%s' "$out" | PYTHONIOENCODING=utf-8 python3 -c "import json,sys; d=json.load(sys.stdin); print(json.loads(d['argumentos']['info'])['tiktokData']['title'])")" "título pedido vai no payload"
+  assert_contains "$out" "Looks em 5 passos" "título aparece no resumo"
+  rm -rf "$d"
+}
+
+_hash_post() { python3 - "$1" "$ROOT" <<'PY'
+import json, os, sys
+sys.path.insert(0, os.path.join(sys.argv[2], "scripts"))
+import approval
+print(approval.sha256_conteudo(json.load(open(os.path.join(sys.argv[1], "plan.json"), encoding="utf-8"))["posts"][1]))
+PY
+}
+
+test_tiktok_title_limit_and_approval_hash() {
+  local d out h1 h2; d="$(mktemp -d)"; _mq "$d"
+  h1=$(_hash_post "$d")
+  python3 - "$d" <<'PY'
+import json, os, sys
+f = os.path.join(sys.argv[1], "plan.json"); p = json.load(open(f, encoding="utf-8")); p["posts"][1]["titulo_tiktok"] = "Looks em 5 passos"
+json.dump(p, open(f, "w", encoding="utf-8"), ensure_ascii=False)
+PY
+  h2=$(_hash_post "$d")
+  [ "$h1" != "$h2" ] || _fail "o título pedido deveria entrar na aprovação"
+  python3 - "$d" <<'PY'
+import json, os, sys
+f = os.path.join(sys.argv[1], "plan.json"); p = json.load(open(f, encoding="utf-8")); p["posts"][1]["titulo_tiktok"] = "a" * 89 + "📌"
+json.dump(p, open(f, "w", encoding="utf-8"), ensure_ascii=False)
+PY
+  out=$(python3 "$ROOT/scripts/validate_schedule.py" "$d/plan.json" --now "$NOW" 2>&1) && _fail "título com 91 unidades UTF-16 aceito"
+  assert_contains "$out" "titulo_tiktok" "mensagem cita o campo"
+  rm -rf "$d"
 }

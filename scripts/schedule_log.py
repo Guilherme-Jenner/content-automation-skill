@@ -221,6 +221,8 @@ def cmd_describe(plano, post_id):
         "Legenda:",
         post["legenda"],
     ]
+    if post.get("titulo_tiktok"):
+        linhas.insert(-2, "Título do TikTok: " + post["titulo_tiktok"])
     sys.stdout.buffer.write(("\n".join(linhas) + "\n").encode("utf-8"))
 
 

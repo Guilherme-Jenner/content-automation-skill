@@ -97,6 +97,9 @@ def erros_do_plano(caminho, now, post_id=None):
                     erros.append(f"{nome}.imagens: formato não suportado '{img}' (use .jpg, .jpeg, .png ou .webp)")
                 elif not os.path.isfile(caminho_do_video(caminho, img)):
                     erros.append(f"{nome}.imagens: arquivo não encontrado: {img}")
+        titulo = p.get("titulo_tiktok", "")
+        if len(titulo.encode("utf-16-le")) // 2 > 90:   # limite do TikTok: 90 unidades UTF-16 (um emoji conta 2)
+            erros.append(f"{nome}.titulo_tiktok passa de 90 unidades UTF-16 (um emoji conta 2); encurte")
         if not DATA_HORA.match(p["data_hora"]):
             erros.append(f"{nome}.data_hora deve estar no formato AAAA-MM-DDTHH:MM:SS-03:00 (fuso America/Sao_Paulo)")
         else:

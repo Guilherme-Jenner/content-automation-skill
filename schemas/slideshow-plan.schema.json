@@ -4,6 +4,7 @@
   "properties": {
     "quantidade": {"type": "integer"},
     "estilo": {"type": "string", "enum": ["padrao", "destaque", "discreto"]},
+    "hook_fixo": {"type": "boolean"},
     "fotos": {
       "type": "array", "minItems": 3,
       "items": {

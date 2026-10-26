@@ -33,15 +33,6 @@ class Recusa(Exception):
 
 
 
-def titulo_tiktok(legenda, limite=90):
-    """Título do Modo Foto: o TikTok limita a 90 unidades UTF-16 (um emoji conta 2); corta em palavra inteira, com folga."""
-    palavras, atual = " ".join(legenda.split()).split(" "), ""
-    for p in palavras:
-        cand = (atual + " " + p).strip()
-        if len(cand.encode("utf-16-le")) // 2 > limite - 5:
-            break
-        atual = cand
-    return atual
 
 def midias_do_post(post):
     return [post["video"]] if "video" in post else list(post["imagens"])
@@ -95,7 +86,8 @@ def montar(post, urls, blog_id, modo, fuso=FUSO):
         if carrossel:
             info["tiktokData"]["photoCoverIndex"] = 0
             info["tiktokData"]["autoAddMusic"] = True   # TikTok escolhe uma música recomendada (não dá para escolher a faixa pela API)
-            info["tiktokData"]["title"] = titulo_tiktok(post["legenda"])
+            if post.get("titulo_tiktok"):   # vazio por padrão (a legenda já aparece como descrição); só vai se o usuário pediu
+                info["tiktokData"]["title"] = post["titulo_tiktok"]
             avisos.append("TikTok em Modo Foto: a ferramenta aceita imagens, mas a publicação não foi executada; valide em modo teste (SELF_ONLY). "
                           "A declaração de IA (isAigc) não vale para post só de fotos no TikTok (a ferramenta a ignora): confira a regra da rede.")
     if modo == "teste":
@@ -108,7 +100,7 @@ def montar(post, urls, blog_id, modo, fuso=FUSO):
             "autoPublish": modo == "real",
             "info": json.dumps(info, ensure_ascii=False),
         },
-        "resumo": {"post": post["id"], "redes": redes, "data_hora": data, "midia": midia, "conteudo_ia": ia,
+        "resumo": {"post": post["id"], "redes": redes, "data_hora": data, "midia": midia, "conteudo_ia": ia, "titulo_tiktok": post.get("titulo_tiktok", ""),
                    "modo": modo, "contas_no_plano": post["perfis"]},
         "avisos": avisos + ["A conta publicada é a que a MARCA (blogId) tem conectada em cada rede; 'conta' do plano é só conferência."],
     }

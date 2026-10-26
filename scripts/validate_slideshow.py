@@ -6,7 +6,7 @@ Erros (exit 1): schema; quantidade fora de 1..5 ou diferente do número de varia
 existe no plano ou foto repetida na mesma variante; 3 a 10 slides por variante; primeiro slide deve ser o único
 `hook`, o último o único `cta`, e ao menos um `app` (ou o `cta` marcado `mostra_app: true`, quando a foto do CTA é o print do app); texto vazio ou que não cabe em 3 linhas no estilo;
 duracao_s fora de 1,5..6 s ou vídeo acima de 60 s; volume fora de -40..0; variantes idênticas (mesma ordem de fotos
-e mesmos textos); formato_hook repetido sem justificativa; achados vazios.
+e mesmos textos); formato_hook repetido sem justificativa (exceto com `hook_fixo: true`, que exige o mesmo formato e texto de hook em todas as variantes); achados vazios.
 Os arquivos de foto são resolvidos a partir da pasta do plano.
 
 Uso: validate_slideshow.py <slideshow-plan.json>
@@ -26,12 +26,16 @@ MAX_VARIANTES = 5
 MIN_SLIDES, MAX_SLIDES = 3, 10
 DURACAO_PADRAO, DURACAO_MIN, DURACAO_MAX, DURACAO_TOTAL_MAX = 2.5, 1.5, 6.0, 60.0
 EXTENSOES = {".jpg", ".jpeg", ".png", ".webp"}
-CAMPOS_TOPO = {"quantidade", "estilo", "fotos", "variantes"}
+CAMPOS_TOPO = {"quantidade", "estilo", "fotos", "variantes", "hook_fixo"}
 CAMPOS_FOTO = {"id", "arquivo", "descricao"}
 CAMPOS_VARIANTE = {"id", "formato_hook", "formato_anuncio", "slides", "musica", "volume_db",
                    "gancho_repetido", "justificativa_gancho", "aprovada", "achados"}
 CAMPOS_SLIDE = {"foto", "papel", "texto", "duracao_s", "mostra_app"}
 ID_VALIDO = re.compile(r"^[A-Za-z0-9_-]{1,32}$")
+
+
+def _norm(texto):
+    return " ".join(texto.lower().split())
 
 
 def duracao_do_slide(slide):
@@ -69,7 +73,7 @@ def erros_do_plano(plano, base):
         if not f["descricao"].strip():
             erros.append(f"{nome}: descricao vazia (descreva o que a foto mostra)")
         caminho = f["arquivo"]
-        if os.path.isabs(caminho) or re.match(r"^[A-Za-z]:[\\/]", caminho) or os.path.normpath(caminho).split(os.sep)[0] == "..":
+        if os.path.isabs(caminho) or caminho.startswith(("/", "\\")) or re.match(r"^[A-Za-z]:[\\/]", caminho) or os.path.normpath(caminho).split(os.sep)[0] == "..":
             erros.append(f"{nome}: '{caminho}' precisa ficar dentro da pasta do plano (caminho relativo, sem '..')")
         elif os.path.splitext(caminho)[1].lower() not in EXTENSOES:
             erros.append(f"{nome}: formato não suportado '{caminho}' (use .jpg, .jpeg, .png ou .webp)")
@@ -141,8 +145,18 @@ def erros_do_plano(plano, base):
                 erros.append(f"variantes[{i}] é idêntica a variantes[{assinaturas[ass]}] (mesma ordem de fotos e mesmos textos)")
             assinaturas.setdefault(ass, i)
         ganchos = {}
+        hook_fixo = plano.get("hook_fixo", False)
+        if hook_fixo:
+            # hook fixo (opcional): o mesmo hook (formato e texto) em todas as variantes; só o resto varia
+            for i, v in enumerate(variantes[1:], 1):
+                if v["formato_hook"] != variantes[0]["formato_hook"]:
+                    erros.append(f"variantes[{i}]: com hook_fixo, o formato_hook deve ser o mesmo de variantes[0] ('{variantes[0]['formato_hook']}')")
+                if _norm(v["slides"][0]["texto"]) != _norm(variantes[0]["slides"][0]["texto"]):
+                    erros.append(f"variantes[{i}]: com hook_fixo, o texto do hook deve ser o mesmo de variantes[0]")
         for i, v in enumerate(variantes):
             g = v["formato_hook"]
+            if hook_fixo:
+                break
             if g in ganchos and not (v.get("gancho_repetido") and v.get("justificativa_gancho", "").strip()):
                 erros.append(f"variantes[{i}]: formato_hook '{g}' repetido de variantes[{ganchos[g]}] "
                              "sem gancho_repetido e justificativa_gancho")

@@ -29,7 +29,7 @@ python3 "${CLAUDE_PLUGIN_ROOT}/scripts/propose_slots.py" "<cadencia.json>" <quan
 As datas ficam entre 15 minutos e 30 dias à frente, em horário de Brasília (`-03:00`). Se não houver horários suficientes, diga isso e ajuste a cadência com o usuário.
 
 ## 5. Plano e validação
-Monte `schedule-plan.json` (formato em `schemas/schedule-plan.schema.json`: `id`, `legenda`, `hashtags`, `perfis`, `data_hora` e **uma** mídia: `video` (Reel/vídeo) **ou** `imagens` (carrossel, de 2 a 10 imagens **na ordem de postagem**, ex.: `["carrossel-A/slide-01.png", ...]`, dentro da pasta do plano)). Declare `"conteudo_ia": true` quando o vídeo/imagem for gerado ou muito alterado por IA (modo gerado): vai para a declaração de IA do Instagram/TikTok e entra na aprovação. Slideshow só com fotos reais do usuário: `false`. Valide:
+Monte `schedule-plan.json` (formato em `schemas/schedule-plan.schema.json`: `id`, `legenda`, `hashtags`, `perfis`, `data_hora` e **uma** mídia: `video` (Reel/vídeo) **ou** `imagens` (carrossel, de 2 a 10 imagens **na ordem de postagem**, ex.: `["carrossel-A/slide-01.png", ...]`, dentro da pasta do plano)). No TikTok em Modo Foto, o **título fica vazio por padrão** (a legenda já aparece como descrição); só inclua `"titulo_tiktok": "..."` se o usuário pedir (máximo de 90 unidades UTF-16, um emoji conta 2; ele entra na aprovação). Declare `"conteudo_ia": true` quando o vídeo/imagem for gerado ou muito alterado por IA (modo gerado): vai para a declaração de IA do Instagram/TikTok e entra na aprovação. Slideshow só com fotos reais do usuário: `false`. Valide:
 ```bash
 python3 "${CLAUDE_PLUGIN_ROOT}/scripts/validate_schedule.py" "<schedule-plan.json>"
 ```
