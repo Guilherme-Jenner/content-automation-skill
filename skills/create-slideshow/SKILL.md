@@ -1,9 +1,11 @@
 ---
 name: create-slideshow
-description: Monta slideshows e carrosséis (vídeo 9:16 e páginas PNG) a partir de fotos enviadas pelo usuário, com legenda em formato de roteiro (hook, problema, app, prova, CTA). Com as mesmas fotos faz várias versões, reordenando e variando hook e anúncio do app, com pesquisa e aprovação por variante. Use quando o usuário enviar fotos/imagens e pedir slideshow, carrossel ou vários vídeos a partir delas.
+description: Monta carrosséis nativos (Instagram) e slideshows em Modo Foto (TikTok): páginas PNG ordenadas, com vídeo opcional, a partir de fotos enviadas pelo usuário, com legenda em formato de roteiro (hook, problema, app, prova, CTA). Com as mesmas fotos faz várias versões, reordenando e variando hook e anúncio do app, com pesquisa e aprovação por variante. Use quando o usuário enviar fotos/imagens e pedir slideshow, carrossel ou vários vídeos a partir delas.
 ---
 
 # Slideshow / carrossel a partir de fotos
+
+O resultado é o **formato nativo das redes**: um conjunto de imagens numeradas na ordem de postagem. No Instagram é o **carrossel** (o usuário desliza); no TikTok é o **Modo Foto** (as fotos passam sozinhas, com música escolhida no app). Não é um vídeo: a rede cuida da passagem. O vídeo `.mp4` é só um extra opcional (por exemplo, para Reels). Os limites de fotos por post mudam com o tempo (hoje cerca de 20 no Instagram e 35 no TikTok; confirme no app), e o plano usa no máximo 10 slides por variante.
 
 `${CLAUDE_PLUGIN_ROOT}` é a pasta onde o plugin está instalado; use-a em todos os comandos abaixo.
 
@@ -58,16 +60,17 @@ python3 "${CLAUDE_PLUGIN_ROOT}/scripts/validate_slideshow.py" "<diretorio de tra
 Mostre cada variante em linguagem simples: hook (formato), ordem das fotos com o papel e o texto de cada slide, como o app é anunciado e a duração total. Só marque `"aprovada": true` na variante que o usuário confirmar de forma explícita ("aprovo"); cada uma é aprovada separadamente. Se pedir ajustes, edite o plano, valide e mostre de novo.
 
 ## 5. Monte
+Pergunte onde vai postar: **TikTok / Reels** usa `9:16` (1080x1920, o padrão); o **carrossel do feed do Instagram** costuma usar `4:5` (1080x1350).
 ```bash
-bash "${CLAUDE_PLUGIN_ROOT}/scripts/make-slideshow.sh" "<diretorio de trabalho>/slideshow-plan.json" "<diretorio de saida>"
+bash "${CLAUDE_PLUGIN_ROOT}/scripts/make-slideshow.sh" "<diretorio de trabalho>/slideshow-plan.json" "<diretorio de saida>" [--aspecto 9:16|4:5] [--formato carrossel|video|ambos]
 ```
-Para cada variante aprovada gera `slideshow-<id>.mp4` (1080x1920, legenda queimada), `slideshow-<id>.srt` e `carrossel-<id>/slide-NN.png` (uma página por slide, com o texto, para postar como carrossel). Relata concluídas, puladas e falhas. Use `--only <id>` para uma só e `--force` para refazer. Mostre os caminhos e peça a avaliação; ajustes voltam ao passo 3.
+Para cada variante aprovada gera `carrossel-<id>/slide-01.png`, `slide-02.png`... (o texto do slide já está na imagem, na ordem de postagem). Com `--formato video` ou `ambos` gera também `slideshow-<id>.mp4` e `.srt` (cada foto na duração do slide, trilha opcional). Relata concluídas, puladas e falhas. Use `--only <id>` para uma só e `--force` para refazer. Mostre os caminhos e peça a avaliação; ajustes voltam ao passo 3.
 
 ## 6. Publicação
-Siga a skill `schedule-post` (legenda, hashtags, horários, **aprovação por post**; o pacote manual leva o vídeo). Para carrossel nativo, o usuário posta as PNGs na ordem `slide-01`, `slide-02`...
+Siga a skill `schedule-post` (legenda do post, hashtags, horários, **aprovação por post**). O usuário sobe as PNGs na ordem `slide-01`, `slide-02`... no Instagram (carrossel) ou no TikTok (Modo Foto, onde escolhe a música no app). O pacote manual de `export_package.sh` ainda é feito para vídeo: para carrossel, entregue a pasta `carrossel-<id>` junto com a legenda e o horário aprovados.
 
 ## Regras
 - Nunca invente fonte ou dado; diga quando algo for hipótese.
 - As fotos originais nunca são modificadas; o texto vai por cima, em cópias.
 - Nada é montado, agendado ou publicado sem aprovação explícita do usuário.
-- Limite atual: transições são cortes secos; o texto fica na parte de baixo (estilo de legenda); a orientação EXIF de fotos de celular não foi verificada (se uma foto sair deitada, gire-a antes).
+- Limite atual: no vídeo opcional, transições são cortes secos; o texto fica na parte de baixo (estilo de legenda); a orientação EXIF de fotos de celular não foi verificada (se uma foto sair deitada, gire-a antes).

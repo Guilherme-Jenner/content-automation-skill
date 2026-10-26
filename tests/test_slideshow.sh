@@ -63,9 +63,22 @@ test_slideshow_variants_must_differ() {
   out=$(_sbad "p['quantidade']=3") && _fail "quantidade errada aceita"
 }
 
+test_make_slideshow_default_is_carousel_only() {
+  local d out; d="$(mktemp -d)"; _sp "$d" "p['variantes'][1]['aprovada']=False"
+  out=$(bash "$ROOT/scripts/make-slideshow.sh" "$d/p.json" "$d/out" 2>&1) || _fail "falhou: $out"
+  assert_file_exists "$d/out/carrossel-A/slide-04.png"
+  [ ! -e "$d/out/slideshow-A.mp4" ] || _fail "o padrão não deveria gerar vídeo"
+  assert_eq "1080x1920" "$(ffprobe -v error -show_entries stream=width,height -of csv=s=x:p=0 "$d/out/carrossel-A/slide-01.png")" "9:16"
+  out=$(bash "$ROOT/scripts/make-slideshow.sh" "$d/p.json" "$d/out" 2>&1) && _fail "sobrescreveu sem --force"
+  bash "$ROOT/scripts/make-slideshow.sh" "$d/p.json" "$d/out45" --aspecto 4:5 >/dev/null 2>&1 || _fail "4:5 falhou"
+  assert_eq "1080x1350" "$(ffprobe -v error -show_entries stream=width,height -of csv=s=x:p=0 "$d/out45/carrossel-A/slide-01.png")" "4:5"
+  assert_fails bash "$ROOT/scripts/make-slideshow.sh" "$d/p.json" "$d/o3" --formato gif
+  rm -rf "$d"
+}
+
 test_make_slideshow_renders_video_and_carousel() {
   local d out; d="$(mktemp -d)"; _sp "$d" "p['variantes'][1]['aprovada']=False"
-  out=$(bash "$ROOT/scripts/make-slideshow.sh" "$d/p.json" "$d/out" 2>&1) || _fail "make-slideshow falhou: $out"
+  out=$(bash "$ROOT/scripts/make-slideshow.sh" "$d/p.json" "$d/out" --formato ambos 2>&1) || _fail "make-slideshow falhou: $out"
   assert_file_exists "$d/out/slideshow-A.mp4"
   assert_file_exists "$d/out/slideshow-A.srt"
   assert_file_exists "$d/out/carrossel-A/slide-04.png"
@@ -73,7 +86,7 @@ test_make_slideshow_renders_video_and_carousel() {
   assert_near 10 "$(ffprobe -v error -show_entries format=duration -of csv=p=0 "$d/out/slideshow-A.mp4")" 0.3 "4 slides de 2,5 s"
   assert_eq "1080x1920" "$(ffprobe -v error -select_streams v -show_entries stream=width,height -of csv=s=x:p=0 "$d/out/slideshow-A.mp4")" "9:16"
   assert_contains "$(cat "$d/out/slideshow-A.srt")" "Sua rotina vive bagunçada?" "legenda do hook"
-  out=$(bash "$ROOT/scripts/make-slideshow.sh" "$d/p.json" "$d/out" 2>&1) && _fail "sobrescreveu sem --force"
+  out=$(bash "$ROOT/scripts/make-slideshow.sh" "$d/p.json" "$d/out" --formato ambos 2>&1) && _fail "sobrescreveu sem --force"
   rm -rf "$d"
 }
 

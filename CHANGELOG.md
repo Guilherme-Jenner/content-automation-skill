@@ -3,7 +3,7 @@
 Cada versão em `.claude-plugin/plugin.json` precisa de uma seção aqui. Quem instalou só recebe a atualização quando o `version` muda.
 
 ## 0.3.0
-- Slideshow/carrossel a partir de fotos do usuário (`create-slideshow`): roteiro por slide (hook, problema, app, prova, CTA), até 5 variantes reaproveitando as mesmas fotos com hooks e anúncios diferentes, aprovação por variante, vídeo 9:16 e PNGs do carrossel (`make-slideshow.sh`), sem custo.
+- Slideshow/carrossel a partir de fotos do usuário (`create-slideshow`): roteiro por slide (hook, problema, app, prova, CTA), até 5 variantes reaproveitando as mesmas fotos com hooks e anúncios diferentes, aprovação por variante, PNGs do carrossel nativo (Instagram) / Modo Foto (TikTok) em 9:16 ou 4:5, com vídeo opcional (`make-slideshow.sh`), sem custo.
 
 ## 0.2.0
 - Modo gerado: geração de clipes com cotação e confirmação do total, montagem, legendas por cena e trilha, e variantes (1 a 5 vídeos finais com os mesmos clipes).
