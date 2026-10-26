@@ -1,0 +1,51 @@
+{
+  "type": "object",
+  "required": ["quantidade", "fotos", "variantes"],
+  "properties": {
+    "quantidade": {"type": "integer"},
+    "estilo": {"type": "string", "enum": ["padrao", "destaque", "discreto"]},
+    "fotos": {
+      "type": "array", "minItems": 3,
+      "items": {
+        "type": "object",
+        "required": ["id", "arquivo", "descricao"],
+        "properties": {
+          "id": {"type": "string"},
+          "arquivo": {"type": "string"},
+          "descricao": {"type": "string"}
+        }
+      }
+    },
+    "variantes": {
+      "type": "array", "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "formato_hook", "formato_anuncio", "slides", "aprovada", "achados"],
+        "properties": {
+          "id": {"type": "string"},
+          "formato_hook": {"type": "string", "enum": ["pergunta", "resultado", "polemica", "erro_comum", "historia", "numero"]},
+          "formato_anuncio": {"type": "string", "enum": ["demo", "antes_depois", "lista", "depoimento", "passo_a_passo"]},
+          "slides": {
+            "type": "array", "minItems": 3,
+            "items": {
+              "type": "object",
+              "required": ["foto", "papel", "texto"],
+              "properties": {
+                "foto": {"type": "string"},
+                "papel": {"type": "string", "enum": ["hook", "problema", "app", "prova", "cta"]},
+                "texto": {"type": "string"},
+                "duracao_s": {"type": "number", "exclusiveMinimum": 0}
+              }
+            }
+          },
+          "musica": {"type": "string"},
+          "volume_db": {"type": "number"},
+          "gancho_repetido": {"type": "boolean"},
+          "justificativa_gancho": {"type": "string"},
+          "aprovada": {"type": "boolean"},
+          "achados": {"type": "array", "items": {"type": "string"}}
+        }
+      }
+    }
+  }
+}

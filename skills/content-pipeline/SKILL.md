@@ -14,7 +14,9 @@ pesquisa → roteiro/hook → [modo] → bruto → edição (editor + N vídeos)
 ```
 
 ## 1. Descubra o modo
-Pergunte (ou deduza do pedido e confirme em uma frase): o vídeo será **gerado** (clipes criados por IA) ou **gravado** (o usuário grava)? Se o usuário já tem um vídeo gravado e só quer editar, vá direto ao passo 4 com o caminho do arquivo.
+Pergunte (ou deduza do pedido e confirme em uma frase): o vídeo será **gerado** (clipes criados por IA), **gravado** (o usuário grava) ou um **slideshow/carrossel** (o usuário envia fotos e só se organiza a ordem e o texto)? Se o usuário já tem um vídeo gravado e só quer editar, vá direto ao passo 4 com o caminho do arquivo.
+
+**Slideshow/carrossel:** com fotos do usuário, use a skill `create-slideshow` (pesquisa, roteiro por slide em formato hook/app/CTA, várias versões reordenando as mesmas fotos, aprovação por variante, vídeo 9:16 e PNGs do carrossel; sem custo). Ela substitui os passos 1b, 3 e 4 (não há geração nem teto de créditos); depois vá ao passo 5.
 
 ## 1b. Teto de gastos (opcional)
 Quase ninguém sabe quanto custa um clipe, então **antes de perguntar**, mostre a tabela de referência (qualidade x duração -> créditos e valor aproximado):

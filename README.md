@@ -17,6 +17,7 @@ Feito para uso interno da CLO (app Clo) e aberto para quem quiser adaptar. A con
 | Edição (gerado) | `edit-generated` | Legendas por cena e trilha sobre o vídeo montado; **variantes** (1 a 5 finais com os mesmos clipes); sem gastar crédito |
 | Edição (gravado) | `edit-recorded` | Cortes de silêncio, legendas (Whisper), áudio, 9:16; variantes; aprovação dos cortes |
 | Edição com Katana | `edit-katana` | Edição autônoma no Higgsfield (gasta sozinha, dentro do limite opcional que você der), com registro do resultado e do gasto |
+| Slideshow / carrossel | `create-slideshow` | Fotos do usuário viram até 5 slideshows (vídeo 9:16 + PNGs do carrossel) reordenando as mesmas fotos, com legenda em formato de roteiro (hook, app, prova, CTA) e aprovação por variante; sem custo |
 | Agendamento | `schedule-post` | Legenda, hashtags, horários, **aprovação por post** amarrada ao conteúdo; pacote manual de entrega |
 
 Ainda não existem: agendador real por MCP (hoje a entrega é o pacote manual), motion/efeitos com Remotion (último passo do plano), e o empacotamento final para instalação pelo marketplace.
