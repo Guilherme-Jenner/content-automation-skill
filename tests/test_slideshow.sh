@@ -39,6 +39,7 @@ test_slideshow_structure_rules() {
   out=$(_sbad "p['variantes'][0]['slides'][0]['papel']='app'") && _fail "primeiro slide sem hook aceito"; assert_contains "$out" "hook" "hook"
   out=$(_sbad "p['variantes'][0]['slides'][-1]['papel']='prova'") && _fail "último slide sem cta aceito"; assert_contains "$out" "cta" "cta"
   out=$(_sbad "p['variantes'][0]['slides'][1]['papel']='prova'") && _fail "sem slide de app aceito"; assert_contains "$out" "app" "app"
+  _sbad "p['variantes'][0]['slides'][1]['papel']='prova'; p['variantes'][0]['slides'][-1]['mostra_app']=True" >/dev/null || _fail "cta com mostra_app deveria bastar"
   out=$(_sbad "p['variantes'][0]['slides'][2]['foto']='f1'") && _fail "foto repetida aceita"; assert_contains "$out" "repetida" "foto repetida"
   out=$(_sbad "p['variantes'][0]['slides'][2]['foto']='f9'") && _fail "foto inexistente aceita"; assert_contains "$out" "f9" "foto inexistente"
   out=$(_sbad "p['variantes'][0]['slides']=p['variantes'][0]['slides'][:2]") && _fail "2 slides aceitos"

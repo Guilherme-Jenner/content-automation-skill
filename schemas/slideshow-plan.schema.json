@@ -34,7 +34,8 @@
                 "foto": {"type": "string"},
                 "papel": {"type": "string", "enum": ["hook", "problema", "app", "prova", "cta"]},
                 "texto": {"type": "string"},
-                "duracao_s": {"type": "number", "exclusiveMinimum": 0}
+                "duracao_s": {"type": "number", "exclusiveMinimum": 0},
+                "mostra_app": {"type": "boolean"}
               }
             }
           },

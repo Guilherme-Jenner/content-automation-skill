@@ -4,7 +4,7 @@
 Erros (exit 1): schema; quantidade fora de 1..5 ou diferente do número de variantes; ids inseguros ou repetidos
 (caixa ignorada); foto sem arquivo, com extensão não suportada ou fora da pasta do plano; slide com foto que não
 existe no plano ou foto repetida na mesma variante; 3 a 10 slides por variante; primeiro slide deve ser o único
-`hook`, o último o único `cta`, e ao menos um `app`; texto vazio ou que não cabe em 3 linhas no estilo;
+`hook`, o último o único `cta`, e ao menos um `app` (ou o `cta` marcado `mostra_app: true`, quando a foto do CTA é o print do app); texto vazio ou que não cabe em 3 linhas no estilo;
 duracao_s fora de 1,5..6 s ou vídeo acima de 60 s; volume fora de -40..0; variantes idênticas (mesma ordem de fotos
 e mesmos textos); formato_hook repetido sem justificativa; achados vazios.
 Os arquivos de foto são resolvidos a partir da pasta do plano.
@@ -30,7 +30,7 @@ CAMPOS_TOPO = {"quantidade", "estilo", "fotos", "variantes"}
 CAMPOS_FOTO = {"id", "arquivo", "descricao"}
 CAMPOS_VARIANTE = {"id", "formato_hook", "formato_anuncio", "slides", "musica", "volume_db",
                    "gancho_repetido", "justificativa_gancho", "aprovada", "achados"}
-CAMPOS_SLIDE = {"foto", "papel", "texto", "duracao_s"}
+CAMPOS_SLIDE = {"foto", "papel", "texto", "duracao_s", "mostra_app"}
 ID_VALIDO = re.compile(r"^[A-Za-z0-9_-]{1,32}$")
 
 
@@ -106,8 +106,8 @@ def erros_do_plano(plano, base):
             erros.append(f"{nome}: o primeiro slide (e só ele) deve ter papel 'hook'")
         if papeis[-1] != "cta" or papeis.count("cta") != 1:
             erros.append(f"{nome}: o último slide (e só ele) deve ter papel 'cta'")
-        if "app" not in papeis:
-            erros.append(f"{nome}: falta ao menos um slide com papel 'app' (o anúncio do app)")
+        if "app" not in papeis and not any(s["papel"] == "cta" and s.get("mostra_app") is True for s in slides):
+            erros.append(f"{nome}: falta ao menos um slide com papel 'app' (o anúncio do app), ou o cta com mostra_app: true")
         usadas = [s["foto"] for s in slides]
         if len(set(usadas)) != len(usadas):
             erros.append(f"{nome}: foto repetida na mesma variante")

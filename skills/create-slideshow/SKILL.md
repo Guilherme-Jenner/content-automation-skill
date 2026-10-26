@@ -28,7 +28,7 @@ Toda variante é uma sequência de 3 a 10 slides, uma foto por slide, sem repeti
 | `problema` | a dor, o "antes" | opcional |
 | `app` | apresenta o app / a solução | **ao menos um** |
 | `prova` | resultado, benefício, números, depoimento | opcional |
-| `cta` | chamada final | **último e único** |
+| `cta` | chamada final | **último e único**; se a foto do CTA já é o print do app, marque `"mostra_app": true` e não precisa de um slide `app` à parte |
 
 `formato_hook` (como abre): `pergunta`, `resultado`, `polemica`, `erro_comum`, `historia`, `numero`.
 `formato_anuncio` (como o app aparece): `demo`, `antes_depois`, `lista`, `depoimento`, `passo_a_passo`.
