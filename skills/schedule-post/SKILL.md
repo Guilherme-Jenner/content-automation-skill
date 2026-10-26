@@ -8,7 +8,7 @@ description: Prepara a postagem de vídeos ou carrosséis prontos no Instagram e
 Converse em português do Brasil, uma pergunta por vez. **Nunca agende nem publique nada sem a aprovação explícita do usuário.**
 
 ## O que existe hoje (diga isso ao usuário)
-- **Metricool (MCP)**: é o passo final automático. O script prepara o payload só a partir do que o usuário aprovou; **você (o agente) chama `createScheduledPost`** com ele. O payload foi conferido contra a definição da ferramenta, mas **ainda não foi validado em execução**: comece sempre em **modo teste** (ver passo 7). As mídias vão ao Metricool por links do Google Drive (sem API: pasta preparada + MCP do Drive só para buscar).
+- **Metricool (MCP)**: é o passo final automático. O script prepara o payload só a partir do que o usuário aprovou; **você (o agente) chama `createScheduledPost`** com ele. O payload foi **validado em execução** num teste real (TikTok, carrossel de fotos, modo teste, pasta pública do Drive); Instagram, vídeo e publicação real (`autoPublish=true`) ainda não: comece sempre em **modo teste** (ver passo 7). As mídias vão ao Metricool por links do Google Drive (sem API: pasta preparada + MCP do Drive só para buscar).
 - **Pacote manual** (passo 8): continua valendo se o Metricool não estiver conectado, e para postar no app.
 - O agendador `fake` só registra num arquivo local, para ensaiar. Ele não agenda nada de verdade.
 

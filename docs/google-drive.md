@@ -21,7 +21,7 @@ python3 scripts/drive_links.py plan.json --found found.json [--link view|downloa
 ```
 - Só posts com aprovação válida são preparados; reexecutar não duplica; imagem alterada vira outro nome (outro hash).
 - `drive_links.py` recusa se faltar arquivo (sincronização incompleta) ou houver duplicata no Drive.
-- O formato do link não foi verificado em execução: `download` é o padrão; se o Metricool recusar, tente `--link view`. Depois de agendar tudo, volte a pasta para "restrito".
+- **Validado em 2026-10-26** com pasta pública: o link direto (`download`, o padrão) foi aceito pelo Metricool, que baixou as imagens. O `--link view` não foi testado. Depois de agendar tudo, volte a pasta para "restrito".
 
 ## Avançado (opcional): envio por API
 `scripts/drive_upload.py` envia os arquivos direto pela API do Drive (cria a pasta, escopo `drive.file`, privado por padrão, `--compartilhar-link` só com o "pode" do usuário). Exige que a pessoa crie uma credencial OAuth no Google Cloud (`auth --client-secret client_secret.json`), por isso **não é o caminho padrão**. Só foi testado contra um servidor falso.
