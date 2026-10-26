@@ -18,7 +18,7 @@ Feito para uso interno da CLO (app Clo) e aberto para quem quiser adaptar. A con
 | Edição (gravado) | `edit-recorded` | Cortes de silêncio, legendas (Whisper), áudio, 9:16; variantes; aprovação dos cortes |
 | Edição com Katana | `edit-katana` | Edição autônoma no Higgsfield (gasta sozinha, dentro do limite opcional que você der), com registro do resultado e do gasto |
 | Slideshow / carrossel | `create-slideshow` | Fotos do usuário viram até 5 carrosséis nativos (Instagram) / Modo Foto (TikTok), em PNG 9:16 ou 4:5; vídeo opcional, reordenando as mesmas fotos, com legenda em formato de roteiro (hook, app, prova, CTA) e aprovação por variante; sem custo |
-| Agendamento | `schedule-post` (+ `drive_upload.py`: sobe as mídias aprovadas para uma pasta do Google Drive) | Legenda, hashtags, horários, **aprovação por post** amarrada ao conteúdo (vídeo ou carrossel); agenda pelo **Metricool (MCP)** em modo teste/real ou entrega o pacote manual |
+| Agendamento | `schedule-post` (+ `stage_media.py`/`drive_links.py`: mídias aprovadas vão ao Google Drive sem API e viram links para o Metricool) | Legenda, hashtags, horários, **aprovação por post** amarrada ao conteúdo (vídeo ou carrossel); agenda pelo **Metricool (MCP)** em modo teste/real ou entrega o pacote manual |
 
 Ainda não validados em execução: o agendamento real pelo **Metricool (MCP)** (o agente chama `createScheduledPost` com um payload preparado só do que foi aprovado; comece em modo teste) e a entrega continua podendo ser o pacote manual. Ainda não existem: motion/efeitos com Remotion (último passo do plano), e o empacotamento final para instalação pelo marketplace.
 

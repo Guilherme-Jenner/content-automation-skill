@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Agenda um post aprovado. Por padrão apenas SIMULA (não grava nada).
-# Uso: schedule.sh <plano> <post-id> --approvals <dir> --scheduler fake [--confirm] [--urls <media-urls.json> --blog-id <id> --modo teste|real] [--now <ISO>, só em testes]
+# Uso: schedule.sh <plano> <post-id> --approvals <dir> --scheduler fake [--confirm] [--urls <media-urls.json> --blog-id <id> --modo teste|real] [--timezone <IANA>] [--now <ISO>, só em testes]
 #   - o log fica SEMPRE ao lado do plano (<pasta do plano>/.schedule-log.json): não há opção para trocá-lo,
 #     senão o mesmo post poderia ser agendado de novo por outro log;
 #   - o post precisa ter aprovação válida; a verificação é refeita sob a trava na hora de reservar, e o
@@ -19,7 +19,7 @@ _src="${BASH_SOURCE[0]}"; case "$_src" in */*) _dir="${_src%/*}" ;; *) _dir=. ;;
 
 [ $# -ge 2 ] || die "uso: schedule.sh <plano> <post-id> --approvals <dir> --scheduler fake [--confirm]"
 plan="$(abspath "$1")"; post="$2"; shift 2
-approvals=""; scheduler=""; confirm=0; now=""; urls=""; blog_id=""; modo="teste"
+approvals=""; scheduler=""; confirm=0; now=""; urls=""; blog_id=""; modo="teste"; fuso="America/Sao_Paulo"
 while [ $# -gt 0 ]; do
   case "$1" in
     --approvals) [ $# -ge 2 ] || die "--approvals exige um diretório"; approvals="$(abspath "$2")"; shift 2 ;;
@@ -29,6 +29,7 @@ while [ $# -gt 0 ]; do
     --urls) [ $# -ge 2 ] || die "--urls exige o media-urls.json"; urls="$(abspath "$2")"; shift 2 ;;
     --blog-id) [ $# -ge 2 ] || die "--blog-id exige o id da marca no Metricool"; blog_id="$2"; shift 2 ;;
     --modo) [ $# -ge 2 ] || die "--modo exige teste ou real"; modo="$2"; shift 2 ;;
+    --timezone) [ $# -ge 2 ] || die "--timezone exige um fuso IANA (o de getBrandSettings)"; fuso="$2"; shift 2 ;;
     *) die "opção desconhecida: $1 (o log de agendamentos tem local fixo ao lado do plano, não há --log)" ;;
   esac
 done
@@ -66,7 +67,7 @@ if [ "$confirm" -eq 0 ]; then
   python3 "$here/schedule_log.py" describe "$plan" "$post"
   if [ "$scheduler" = metricool ]; then
     echo "--- Payload que seria usado (modo $modo) ---"
-    python3 "$here/metricool_payload.py" plano "$plan" "$post" --urls "$urls" --blog-id "$blog_id" --modo "$modo" || die "não foi possível montar o payload do Metricool; nada foi agendado"
+    python3 "$here/metricool_payload.py" plano "$plan" "$post" --urls "$urls" --blog-id "$blog_id" --modo "$modo" --timezone "$fuso" || die "não foi possível montar o payload do Metricool; nada foi agendado"
   fi
   echo "SIMULAÇÃO: nada foi agendado. Para agendar de verdade rode de novo com --confirm (só depois do 'aprovo' do usuário)."
   exit 0
@@ -83,7 +84,7 @@ snapshot="$(printf '%s\n' "$saida" | tail -1)"
 
 if [ "$scheduler" = metricool ]; then
   payload="$snapshot/metricool-payload.json"
-  if ! python3 "$here/metricool_payload.py" snapshot "$snapshot" --urls "$urls" --blog-id "$blog_id" --modo "$modo" > "$payload"; then
+  if ! python3 "$here/metricool_payload.py" snapshot "$snapshot" --urls "$urls" --blog-id "$blog_id" --modo "$modo" --timezone "$fuso" > "$payload"; then
     python3 "$here/schedule_log.py" release "$plan" "$post" "$log" --conferido >/dev/null
     die "não foi possível montar o payload do Metricool; a reserva foi liberada e nada ficou agendado"
   fi

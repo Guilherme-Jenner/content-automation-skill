@@ -2,17 +2,18 @@
 """Monta o payload da ferramenta `createScheduledPost` do MCP do Metricool a partir de um post APROVADO.
 
 O MCP é ferramenta do agente (um script não consegue chamá-lo): este script só prepara os argumentos, e o agente
-faz a chamada com eles e mais nada. O contrato abaixo vem das definições das ferramentas lidas em 2026-10-17
-(docs/agendadores.md) e NÃO foi verificado em execução: o agente deve conferir cada campo contra o esquema da
-ferramenta carregada na sessão e parar se algo divergir.
+faz a chamada com eles e mais nada. O contrato foi conferido contra a definição da ferramenta `createScheduledPost`
+carregada em 2026-10-26 (`info.media`, `autoPublish`, `publicationDate`, `instagramData`, `tiktokData`; `blogId` é texto);
+a chamada em si ainda não foi executada. O agente deve conferir de novo contra o esquema vivo e parar se algo divergir.
 
-Uso: metricool_payload.py snapshot <pasta-do-snapshot> --urls <media-urls.json> --blog-id <id> [--modo teste|real]
-     metricool_payload.py plano <plano> <post-id> --urls <media-urls.json> --blog-id <id> [--modo teste|real]
+Uso: metricool_payload.py snapshot <pasta-do-snapshot> --urls <media-urls.json> --blog-id <id> [--modo teste|real] [--timezone <IANA>]
+     metricool_payload.py plano <plano> <post-id> --urls <media-urls.json> --blog-id <id> [--modo teste|real] [--timezone <IANA>]
      (`plano` só confere e mostra; o envio sempre parte do `snapshot` aprovado)
 
 media-urls.json: {"<caminho da mídia como está no plano>": "https://link-publico-do-arquivo", ...}
-  Uma entrada por arquivo do post (vídeo, ou cada imagem do carrossel). O Metricool só aceita URL pública
-  (ou link do Google Drive/Dropbox vinculado à conta dele): subir o arquivo é uma ação do USUÁRIO.
+  Uma entrada por arquivo do post (vídeo, ou cada imagem do carrossel): normalmente gerado por `drive_links.py`.
+  O Metricool aceita URL pública ou link do Google Drive/Dropbox (o Drive precisa estar vinculado à conta dele).
+--timezone: fuso IANA da marca (use o de getBrandSettings; padrão America/Sao_Paulo).
 --modo teste (padrão): autoPublish=false (o Metricool NÃO publica sozinho; avisa o celular) e TikTok SELF_ONLY.
 --modo real: autoPublish=true e TikTok público. Só use depois de validar em modo teste e do "confirmo" do usuário.
 """
@@ -54,7 +55,7 @@ def urls_das_midias(post, urls):
     return saida
 
 
-def montar(post, urls, blog_id, modo):
+def montar(post, urls, blog_id, modo, fuso=FUSO):
     if modo not in ("teste", "real"):
         raise Recusa("modo deve ser teste ou real")
     if not re.fullmatch(r"[0-9]{1,18}", str(blog_id)):
@@ -62,6 +63,8 @@ def montar(post, urls, blog_id, modo):
     redes = sorted({p["rede"] for p in post["perfis"]})
     if not set(redes) <= REDES:
         raise Recusa("rede não suportada: " + ", ".join(sorted(set(redes) - REDES)))
+    if not re.fullmatch(r"[A-Za-z]+(/[A-Za-z0-9_+-]+)+", str(fuso)):
+        raise Recusa("timezone deve ser um identificador IANA (ex.: America/Sao_Paulo)")
     midia = urls_das_midias(post, urls)
     carrossel = "imagens" in post
     ia = bool(post.get("conteudo_ia", False))
@@ -69,23 +72,26 @@ def montar(post, urls, blog_id, modo):
     data = post["data_hora"]
     info = {
         "providers": [{"network": r} for r in redes],
-        "publicationDate": {"dateTime": data[:19], "timezone": FUSO},
+        "publicationDate": {"dateTime": data[:19], "timezone": fuso},
         "text": texto,
         "media": midia,
     }
-    avisos = ["Contrato não verificado em execução: conferir cada campo contra o esquema vivo da ferramenta antes de chamar."]
+    avisos = ["Contrato conferido contra a definição da ferramenta (2026-10-26), mas ainda não executado: confira de novo contra o esquema vivo antes de chamar."]
     if "instagram" in redes:
         info["instagramData"] = {"type": "POST" if carrossel else "REEL", "isAiGenerated": ia}
     if "tiktok" in redes:
         info["tiktokData"] = {"privacyOption": "SELF_ONLY" if modo == "teste" else "PUBLIC_TO_EVERYONE", "isAigc": ia}
         if carrossel:
-            avisos.append("TikTok em Modo Foto (carrossel de imagens) via Metricool NÃO foi verificado: validar com a conta de teste (SELF_ONLY) antes de contar com isso.")
+            info["tiktokData"]["photoCoverIndex"] = 0
+            info["tiktokData"]["title"] = " ".join(post["legenda"].split())[:90]
+            avisos.append("TikTok em Modo Foto: a ferramenta aceita imagens, mas a publicação não foi executada; valide em modo teste (SELF_ONLY). "
+                          "A declaração de IA (isAigc) não vale para post só de fotos no TikTok (a ferramenta a ignora): confira a regra da rede.")
     if modo == "teste":
         avisos.append("MODO TESTE: autoPublish=false (o Metricool não publica sozinho) e TikTok SELF_ONLY.")
     return {
         "ferramenta": "createScheduledPost",
         "argumentos": {
-            "blogId": int(blog_id),
+            "blogId": str(blog_id),
             "date": data,
             "autoPublish": modo == "real",
             "info": json.dumps(info, ensure_ascii=False),
@@ -109,7 +115,7 @@ def ler_urls(caminho):
 
 def main(argv):
     args = argv[1:]
-    opcoes = {"--urls": None, "--blog-id": None, "--modo": "teste"}
+    opcoes = {"--urls": None, "--blog-id": None, "--modo": "teste", "--timezone": FUSO}
     pos, i = [], 0
     while i < len(args):
         if args[i] in opcoes:
@@ -132,7 +138,7 @@ def main(argv):
         else:
             from approval import achar_post
             post = achar_post(pos[1], pos[2])
-        saida = montar(post, ler_urls(opcoes["--urls"]), opcoes["--blog-id"], opcoes["--modo"])
+        saida = montar(post, ler_urls(opcoes["--urls"]), opcoes["--blog-id"], opcoes["--modo"], opcoes["--timezone"])
     except (Recusa, OSError, KeyError, ValueError) as e:
         print(f"recusado: {e}", file=sys.stderr)
         return 1

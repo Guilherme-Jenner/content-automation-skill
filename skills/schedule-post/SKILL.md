@@ -8,7 +8,7 @@ description: Prepara a postagem de vídeos ou carrosséis prontos no Instagram e
 Converse em português do Brasil, uma pergunta por vez. **Nunca agende nem publique nada sem a aprovação explícita do usuário.**
 
 ## O que existe hoje (diga isso ao usuário)
-- **Metricool (MCP)**: é o passo final automático. O script prepara o payload só a partir do que o usuário aprovou; **você (o agente) chama `createScheduledPost`** com ele. O contrato foi lido nas definições das ferramentas, mas **ainda não foi validado em execução**: comece sempre em **modo teste** (ver passo 7).
+- **Metricool (MCP)**: é o passo final automático. O script prepara o payload só a partir do que o usuário aprovou; **você (o agente) chama `createScheduledPost`** com ele. O payload foi conferido contra a definição da ferramenta, mas **ainda não foi validado em execução**: comece sempre em **modo teste** (ver passo 7). As mídias vão ao Metricool por links do Google Drive (sem API: pasta preparada + MCP do Drive só para buscar).
 - **Pacote manual** (passo 8): continua valendo se o Metricool não estiver conectado, e para postar no app.
 - O agendador `fake` só registra num arquivo local, para ensaiar. Ele não agenda nada de verdade.
 
@@ -43,21 +43,34 @@ python3 "${CLAUDE_PLUGIN_ROOT}/scripts/approval.py" approve "<schedule-plan.json
 A aprovação fica amarrada ao hash do vídeo, da legenda, das hashtags, dos perfis e do horário. Se qualquer coisa mudar depois, a aprovação deixa de valer e é preciso pedir de novo. Aprovar um post não aprova os outros.
 
 ## 7. Agendar pelo Metricool (passo final automático)
-**Pré-requisitos** (peça ao usuário, uma coisa por vez): a conta do Metricool conectada ao Claude (conector/MCP) com Instagram e TikTok conectados na marca; o `blogId` da marca (use `getBrandSettings` para ver marca e fuso; sem rede conectada ele dá erro); e as **mídias em links** (próximo item).
-- O Metricool **não aceita arquivo local**, só link. **Hospedagem automática no Google Drive** (guia: `docs/google-drive.md`): depois de aprovar os posts, rode `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/drive_upload.py" enviar "<schedule-plan.json>" --approvals "<pasta de aprovações>" --pasta "<nome da pasta>"`. Ele cria a pasta no Drive do usuário, envia **só a mídia dos posts aprovados** e gera `urls-<post-id>.json` (o `--urls` do passo abaixo). Pré-requisito do usuário, uma vez: `drive_upload.py auth` no terminal dele (você não consegue fazer isso, é interativo). **Não use o MCP do Google Drive para enviar vídeo/imagem** (o conteúdo passaria pelo seu contexto).
-- **Privado por padrão.** Nesse caso o Metricool só lê os arquivos se o Drive estiver vinculado na conta dele (o usuário configura). Só use `--compartilhar-link` (qualquer pessoa com o link abre o arquivo = publicar) depois de **explicar isso e receber o "pode" explícito do usuário**; terminados os agendamentos, ofereça `drive_upload.py revogar` para remover o acesso por link.
-- Sem o Drive automático, o usuário sobe os arquivos onde preferir e cola os links: monte `media-urls.json` (`{"<caminho da mídia como está no plano>": "https://..."}`, um por post). Em qualquer caso, peça ao usuário para **abrir um link e conferir que é o arquivo certo** (o script não verifica o conteúdo do link).
+**Pré-requisitos** (confira, uma coisa por vez):
+- **Metricool conectado ao Claude** e, **na própria marca do Metricool, o Instagram e/ou o TikTok conectados** (sem rede conectada, `getBrandSettings` dá erro e nada pode ser agendado; o erro traz o link para conectar). Rode `getBrandSettings` (só leitura): ele dá o `blogId` da marca, o **fuso** (use-o em `--timezone`) e as redes conectadas.
+- **Google Drive conectado ao Claude** (MCP) **e vinculado na conta do Metricool** (Metricool > configurações da conta > integrações; uma vez só, no navegador). O Metricool não aceita arquivo local, só link; os links do Drive só funcionam por essa vinculação, e os arquivos **continuam privados** (sem "qualquer pessoa com o link").
+
+**Levar as mídias ao Drive, sem API nem credenciais** (depois de aprovar os posts):
+1. Prepare a pasta (só posts aprovados, nomes únicos como `clo__p2__01__ab12cd34.png`):
+   ```bash
+   python3 "${CLAUDE_PLUGIN_ROOT}/scripts/stage_media.py" "<schedule-plan.json>" --approvals "<pasta de aprovações>" [--destino "<pasta>"]
+   ```
+   Padrão: `<pasta do plano>/para-drive`. Se o usuário tem o **Google Drive para computador**, use como `--destino` uma pasta dentro do Drive dele (ex.: `~/Google Drive/Meu Drive/Clo`): o upload é automático. Se não, peça que **arraste o conteúdo da pasta para o Drive no navegador** (uma ação só, para todos os posts).
+2. Espere a sincronização/upload terminar e busque cada post com o MCP do Drive: `search_files` com `title contains 'clo__<post-id>__'` (use `excludeContentSnippets: true`). **Só leia**: nunca envie arquivos pelo MCP do Drive (`create_file` exige o conteúdo em base64 dentro da conversa: inviável para imagens e vídeos).
+3. Salve o resultado como veio em `found.json` (lista de `{id, name}`) e gere os links:
+   ```bash
+   python3 "${CLAUDE_PLUGIN_ROOT}/scripts/drive_links.py" "<schedule-plan.json>" --found "<found.json>"
+   ```
+   Isso escreve `urls-<post-id>.json` (o `--urls` do agendamento). Ele recusa se faltar arquivo (sincronização incompleta) ou houver cópia duplicada; nesse caso espere/limpe e busque de novo. O nome do arquivo leva o início do hash do conteúdo, então um arquivo trocado não é aceito.
+- Alternativa avançada (opcional, exige uma credencial do Google Cloud): `drive_upload.py` envia por API (`docs/google-drive.md`). Não é o caminho padrão.
 - O plano grátis do Metricool tem limite de posts agendados por mês (cerca de 20, a conferir): para 30 posts no mês, avise antes e planeje em lotes ou em plano pago.
-- A conta que publica é a que a **marca** tem conectada em cada rede; `conta` no plano é só conferência. O Modo Foto do TikTok (carrossel) via Metricool **não foi verificado**.
+- A conta que publica é a que a **marca** tem conectada em cada rede; `conta` no plano é só conferência. No TikTok, post só de fotos aceita imagens, mas a declaração de IA (`isAigc`) não vale para post só de fotos (a ferramenta a ignora): confira a regra da rede.
 
 Para **cada post aprovado** (um por vez, nunca em lote sem confirmação):
 1. **Simulação** (não grava nada, mostra o payload):
    ```bash
-   bash "${CLAUDE_PLUGIN_ROOT}/scripts/schedule.sh" "<schedule-plan.json>" <post-id> --approvals "<pasta de aprovações>" --scheduler metricool --urls "<media-urls.json>" --blog-id <blogId> --modo teste
+   bash "${CLAUDE_PLUGIN_ROOT}/scripts/schedule.sh" "<schedule-plan.json>" <post-id> --approvals "<pasta de aprovações>" --scheduler metricool --urls "<urls-<post-id>.json>" --blog-id <blogId> --timezone <fuso da marca> --modo teste
    ```
 2. **Primeira vez: valide em modo teste** (`--modo teste`, o padrão): `autoPublish=false` (o Metricool **não publica sozinho**, só avisa o celular) e TikTok `SELF_ONLY` (só o dono vê). Confira no Metricool que o post apareceu certo antes de passar para `--modo real`. Só use `--modo real` depois dessa validação **e** de o usuário dizer "confirmo agendar de verdade".
 3. Com a confirmação do usuário, rode o mesmo comando com `--confirm`. O script reserva o post e grava `.snapshots/<post>-*/metricool-payload.json`, **sem enviar nada**.
-4. **Você chama `createScheduledPost`** com os `argumentos` desse arquivo, sem alterar nada. Antes, compare cada campo com o esquema vivo da ferramenta carregada; se algum divergir, **pare e relate** (não adapte por conta própria). A data não pode estar no passado.
+4. **Você chama `mcp__Metricool_Social_Media_Management__createScheduledPost`** com `blogId`, `date` e `info` exatamente como estão em `argumentos` nesse arquivo, sem alterar nada. Antes, compare cada campo com o esquema da ferramenta; se algum divergir, **pare e relate** (não adapte por conta própria). A data não pode estar no passado.
 5. Registre o resultado:
    - criou: `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/schedule_log.py" commit "<plano>" <post-id> "<pasta do plano>/.schedule-log.json" "<id ou plannerUrl devolvido>"`;
    - falhou e nada foi criado: `schedule_log.py release ... --conferido`; se houver dúvida se criou, **confira com `getScheduledPosts`** antes de liberar.

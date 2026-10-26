@@ -64,7 +64,8 @@ test_payload_for_video_and_carousel() {
   assert_eq "POST" "$(printf '%s' "$out" | python3 -c "import json,sys; d=json.load(sys.stdin); print(json.loads(d['argumentos']['info'])['instagramData']['type'])")" "imagens = POST"
   assert_eq "3" "$(printf '%s' "$out" | python3 -c "import json,sys; d=json.load(sys.stdin); print(len(json.loads(d['argumentos']['info'])['media']))")" "3 mídias"
   assert_eq "True" "$(printf '%s' "$out" | python3 -c "import json,sys; print(json.load(sys.stdin)['argumentos']['autoPublish'])")" "modo real publica"
-  assert_contains "$out" "NÃO foi verificado" "avisa o Modo Foto não verificado"
+  assert_contains "$out" "valide em modo teste" "avisa que o Modo Foto não foi executado"
+  assert_contains "$out" "photoCoverIndex" "capa do Modo Foto"
   assert_contains "$out" "#clo #rotina" "hashtags no texto"
   assert_contains "$out" "2026-10-22T19:00:00" "data e hora"
   rm -rf "$d"
@@ -78,6 +79,10 @@ test_payload_refuses_bad_urls_and_ids() {
   out=$(_mp plano "$d/plan.json" p2 --urls "$d/u.json" --blog-id 123 2>&1) && _fail "http aceito"; assert_contains "$out" "https" "só https"
   assert_fails _mp plano "$d/plan.json" p1 --urls "$d/urls-p1.json" --blog-id abc
   assert_fails _mp plano "$d/plan.json" p1 --urls "$d/urls-p1.json" --blog-id 123 --modo qualquer
+  assert_fails _mp plano "$d/plan.json" p1 --urls "$d/urls-p1.json" --blog-id 123 --timezone "Sao Paulo"
+  out=$(_mp plano "$d/plan.json" p1 --urls "$d/urls-p1.json" --blog-id 123 --timezone America/Recife)
+  assert_contains "$out" "America/Recife" "fuso da marca"
+  assert_contains "$out" '"blogId": "123"' "blogId é texto"
   rm -rf "$d"
 }
 

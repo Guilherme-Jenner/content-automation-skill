@@ -1,24 +1,26 @@
-# Google Drive: hospedagem das mídias para o Metricool
+# Google Drive: levando as mídias ao Metricool
 
-O Metricool só aceita mídia por **link** (o MCP dele não recebe arquivo). Em vez de o usuário subir tudo à mão, o `scripts/drive_upload.py` cria uma pasta no Google Drive e envia, **só dos posts já aprovados**, o vídeo ou as imagens do carrossel. O upload é feito por script (não pelo MCP do Drive): arquivos binários passando pelo contexto do Claude seriam inviáveis para dezenas de posts.
+O Metricool não recebe arquivo local; ele lê **links**, e os do Google Drive funcionam **se o Drive estiver vinculado na conta do Metricool** (os arquivos continuam privados). O MCP do Google Drive também não serve para enviar mídia (`create_file` exige o conteúdo em base64 dentro da conversa, inviável para imagens e vídeos). O caminho padrão, **sem API, sem Google Cloud e sem credenciais**, é:
 
-> Não foi validado contra o Google de verdade (os testes usam um servidor falso). Faça o primeiro envio com um post de teste.
+1. `stage_media.py` copia as mídias **dos posts aprovados** para uma pasta, com nomes únicos (`clo__<post>__<NN>__<hash8>.<ext>`).
+2. A pasta chega ao Drive por **uma** destas vias:
+   - **Google Drive para computador** (recomendado): use como `--destino` uma pasta dentro do Drive (`~/Google Drive/Meu Drive/Clo`). Sincroniza sozinho.
+   - **Arrastar no navegador**: arraste o conteúdo de `para-drive/` para o Drive (uma ação para todos os posts).
+3. O Claude busca os arquivos com `search_files` do MCP do Drive (só leitura), e `drive_links.py` transforma o resultado em `urls-<post>.json`, que alimenta `schedule.sh --scheduler metricool --urls`.
 
-## Configuração (uma vez, no terminal do usuário)
-1. No [Google Cloud Console](https://console.cloud.google.com/): crie um projeto, ative a **Google Drive API** e, em *APIs e serviços > Credenciais*, crie um **ID do cliente OAuth** do tipo **App para computador**. Baixe o JSON (`client_secret.json`). Na tela de consentimento, adicione a sua conta como usuário de teste.
-2. Rode (abre o navegador; o escopo pedido é só `drive.file`: a ferramenta enxerga apenas o que ela mesma cria, nunca o resto do seu Drive):
-   ```bash
-   python3 scripts/drive_upload.py auth --client-secret client_secret.json
-   ```
-   O token fica em `~/.config/clo-content-pipeline/drive-token.json` (permissão 0600). Não o envie a ninguém nem o coloque no repositório.
-   Alternativa: exportar `GOOGLE_DRIVE_ACCESS_TOKEN` com um token de acesso já pronto.
+## Configuração (uma vez por pessoa)
+- No Metricool, vincule o Google Drive (configurações da conta > integrações) e conecte Instagram/TikTok na marca.
+- No Claude, conecte os conectores **Google Drive** e **Metricool**.
 
-## Uso
+## Comandos
 ```bash
-python3 scripts/drive_upload.py enviar plan.json --approvals ap/ --pasta "Clo Novembro" [--posts p1,p2] [--compartilhar-link] [--link view|download]
-python3 scripts/drive_upload.py revogar plan.json
+python3 scripts/stage_media.py plan.json --approvals ap/ [--destino "<pasta>"] [--prefixo clo] [--posts p1,p2]
+# (Claude: search_files com  title contains 'clo__<post>__'  → found.json)
+python3 scripts/drive_links.py plan.json --found found.json [--link view|download]
 ```
-- Cria `Clo Novembro/<post-id>/` e envia as mídias dos posts com aprovação válida (os demais são pulados). Reenviar não duplica; mídia alterada depois da aprovação não é enviada.
-- Grava `urls-<post-id>.json` ao lado do plano (entrada do `--urls` do `schedule.sh`) e `.drive-upload.json` (ids dos arquivos).
-- **Privado por padrão.** Sem `--compartilhar-link`, o Metricool só lê os arquivos se o **Google Drive estiver vinculado na conta dele** (configuração dele). Com `--compartilhar-link`, qualquer pessoa com o link consegue abrir o arquivo: isso é publicar, só com o "pode" explícito do usuário. `revogar` remove o acesso por link (os arquivos continuam no Drive).
-- Os formatos de link aceitos pelo Metricool não foram verificados em execução; teste `view` e, se ele recusar, `download`.
+- Só posts com aprovação válida são preparados; reexecutar não duplica; imagem alterada vira outro nome (outro hash).
+- `drive_links.py` recusa se faltar arquivo (sincronização incompleta) ou houver duplicata no Drive.
+- O formato do link (`view` por padrão) não foi verificado em execução; se o Metricool recusar, use `--link download`.
+
+## Avançado (opcional): envio por API
+`scripts/drive_upload.py` envia os arquivos direto pela API do Drive (cria a pasta, escopo `drive.file`, privado por padrão, `--compartilhar-link` só com o "pode" do usuário). Exige que a pessoa crie uma credencial OAuth no Google Cloud (`auth --client-secret client_secret.json`), por isso **não é o caminho padrão**. Só foi testado contra um servidor falso.
