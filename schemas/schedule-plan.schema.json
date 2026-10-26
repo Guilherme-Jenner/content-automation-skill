@@ -6,10 +6,12 @@
       "type": "array", "minItems": 1,
       "items": {
         "type": "object",
-        "required": ["id", "video", "legenda", "hashtags", "perfis", "data_hora"],
+        "required": ["id", "legenda", "hashtags", "perfis", "data_hora"],
         "properties": {
           "id": {"type": "string"},
           "video": {"type": "string"},
+          "imagens": {"type": "array", "minItems": 2, "items": {"type": "string"}},
+          "conteudo_ia": {"type": "boolean"},
           "legenda": {"type": "string"},
           "hashtags": {"type": "array", "items": {"type": "string"}},
           "perfis": {

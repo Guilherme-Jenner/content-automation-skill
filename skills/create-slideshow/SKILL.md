@@ -67,7 +67,7 @@ bash "${CLAUDE_PLUGIN_ROOT}/scripts/make-slideshow.sh" "<diretorio de trabalho>/
 Para cada variante aprovada gera `carrossel-<id>/slide-01.png`, `slide-02.png`... (o texto do slide já está na imagem, na ordem de postagem). Com `--formato video` ou `ambos` gera também `slideshow-<id>.mp4` e `.srt` (cada foto na duração do slide, trilha opcional). Relata concluídas, puladas e falhas. Use `--only <id>` para uma só e `--force` para refazer. Mostre os caminhos e peça a avaliação; ajustes voltam ao passo 3.
 
 ## 6. Publicação
-Siga a skill `schedule-post` (legenda do post, hashtags, horários, **aprovação por post**). O usuário sobe as PNGs na ordem `slide-01`, `slide-02`... no Instagram (carrossel) ou no TikTok (Modo Foto, onde escolhe a música no app). O pacote manual de `export_package.sh` ainda é feito para vídeo: para carrossel, entregue a pasta `carrossel-<id>` junto com a legenda e o horário aprovados.
+Siga a skill `schedule-post` (legenda do post, hashtags, horários, **aprovação por post**, e o agendamento pelo Metricool). No plano de agendamento, use `imagens` com as PNGs de `carrossel-<id>/` na ordem. Para postar à mão, o usuário sobe as PNGs na ordem `slide-01`, `slide-02`... no Instagram (carrossel) ou no TikTok (Modo Foto, onde escolhe a música no app). O pacote manual (`export_package.sh`) também aceita carrossel.
 
 ## Regras
 - Nunca invente fonte ou dado; diga quando algo for hipótese.

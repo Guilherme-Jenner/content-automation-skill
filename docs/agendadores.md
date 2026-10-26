@@ -76,3 +76,12 @@ O MCP é uma ferramenta do **agente**, não algo que um script bash consiga cham
 
 ### Primeira chamada real (somente leitura): `getBrandSettings` (2026-10-17)
 Chamada na conta de teste, sem nenhuma rede conectada. Resultado: **erro** dizendo que a marca ainda não tem nenhuma rede conectada e apontando para a tela de conexões do Metricool (o `blogId` da marca de teste aparece no link). Ou seja, enquanto nenhuma rede for conectada não dá para ver o fuso, as redes nem usar as outras ferramentas. Nenhuma outra ferramenta foi chamada; nada foi agendado nem publicado.
+
+## Fase 2b implementada: adaptador do Metricool (2026-10-26)
+Implementado como o desenho acima, **sem ter sido executado contra a conta real** (as ferramentas do Metricool não estavam conectadas na sessão de desenvolvimento; os testes cobrem só a preparação do payload e o log):
+- `schedule.sh --scheduler metricool --urls <media-urls.json> --blog-id <id> [--modo teste|real] [--confirm]`: sem `--confirm` simula e mostra o payload; com `--confirm` reserva o post aprovado e grava `.snapshots/<post>-*/metricool-payload.json`, e para (reserva `em_andamento`).
+- `metricool_payload.py` monta `createScheduledPost` (`blogId`, `date`, `autoPublish`, `info` como string JSON com `providers`, `publicationDate`, `text`, `media`, `instagramData`, `tiktokData`). Vídeo vira `REEL`, carrossel de imagens vira `POST`. Conteúdo de IA vai em `isAiGenerated`/`isAigc`.
+- **Modo teste (padrão):** `autoPublish=false` e TikTok `SELF_ONLY`. **Modo real:** `autoPublish=true` e TikTok público; só depois da validação em teste e da confirmação do usuário.
+- O agente chama a ferramenta com os `argumentos` do arquivo e registra com `schedule_log.py commit` (ou `release`).
+- Incertezas a resolver na primeira execução real (conferir contra o esquema vivo): onde a lista de mídias entra em `info` (assumido `info.media`), o valor de `privacyOption` para TikTok público (assumido `PUBLIC_TO_EVERYONE`), suporte do TikTok em Modo Foto via Metricool, e o limite mensal de posts agendados do plano grátis.
+- As URLs públicas das mídias são fornecidas pelo usuário (subir arquivo é ação dele); o script não consegue verificar o conteúdo do link.

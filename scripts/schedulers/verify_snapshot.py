@@ -26,9 +26,13 @@ def main(argv):
         with open(os.path.join(pasta, "post.json"), encoding="utf-8") as f:
             json.load(f)
         videos = glob.glob(os.path.join(glob.escape(pasta), "video.*"))
-        if len(videos) != 1:
+        imagens = sorted(glob.glob(os.path.join(glob.escape(pasta), "imagem-*")))
+        if len(videos) == 1 and not imagens:
+            return 0 if sha256(videos[0]) == aprovado["sha256_video"] else 1
+        if videos or len(imagens) < 2:
             return 1
-        return 0 if sha256(videos[0]) == aprovado["sha256_video"] else 1
+        hashes = [sha256(i) for i in imagens]   # imagem-01, imagem-02...: a ordem do nome é a ordem aprovada
+        return 0 if hashlib.sha256("\n".join(hashes).encode("utf-8")).hexdigest() == aprovado["sha256_video"] else 1
     except (OSError, ValueError, KeyError):
         return 1
 

@@ -15,6 +15,7 @@ pode ser reagendado depois de `supersede` (o usuário cancela o anterior no agen
 O snapshot (pasta .snapshots/<post-id>-<chave>/) tem o vídeo e o conteúdo exatamente como aprovados; o
 agendador deve usar só ele. Todos os comandos que escrevem usam trava de arquivo (<log>.lock) e escrita atômica.
 """
+import hashlib
 import json
 import os
 import shutil
@@ -24,9 +25,9 @@ from datetime import datetime, timedelta, timezone
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from approval import Recusa as RecusaAprovacao  # noqa: E402
-from approval import achar_post, sha256_arquivo, sha256_conteudo, verificar  # noqa: E402
+from approval import achar_post, sha256_arquivo, sha256_conteudo, sha256_midia, verificar  # noqa: E402
 from budget import travar  # noqa: E402
-from validate_schedule import caminho_do_video  # noqa: E402
+from validate_schedule import midias_do_post  # noqa: E402
 
 JA_AGENDADO = 4
 ATIVOS = ("agendado", "em_andamento")
@@ -39,7 +40,7 @@ class Recusa(Exception):
 
 def chave_atual(plano, post_id):
     post = achar_post(plano, post_id)
-    return post, f"{sha256_conteudo(post)}:{sha256_arquivo(caminho_do_video(plano, post['video']))}"
+    return post, f"{sha256_conteudo(post)}:{sha256_midia(plano, post)}"
 
 
 def carregar(log):
@@ -129,12 +130,18 @@ def cmd_reserve(plano, post_id, log, agendador, aprovacoes):
         snap = pasta_snapshot(log, post_id, chave)
         shutil.rmtree(snap, ignore_errors=True)
         os.makedirs(snap)
-        video_origem = caminho_do_video(plano, post["video"])
-        video_snap = os.path.join(snap, "video" + os.path.splitext(video_origem)[1])
-        shutil.copyfile(video_origem, video_snap)
-        if sha256_arquivo(video_snap) != reg["sha256_video"]:
+        origens = midias_do_post(plano, post)
+        if "video" in post:
+            nomes = ["video" + os.path.splitext(origens[0])[1]]
+        else:   # carrossel: imagem-01.png, imagem-02.png... na ordem aprovada
+            nomes = [f"imagem-{i:02d}" + os.path.splitext(o)[1].lower() for i, o in enumerate(origens, 1)]
+        for origem, nome in zip(origens, nomes):
+            shutil.copyfile(origem, os.path.join(snap, nome))
+        hashes = [sha256_arquivo(os.path.join(snap, n)) for n in nomes]
+        copiado = hashes[0] if "video" in post else hashlib.sha256("\n".join(hashes).encode("utf-8")).hexdigest()
+        if copiado != reg["sha256_video"]:
             shutil.rmtree(snap, ignore_errors=True)
-            raise Recusa("o vídeo mudou durante a cópia; peça uma nova aprovação")
+            raise Recusa("a mídia mudou durante a cópia; peça uma nova aprovação")
         with open(os.path.join(snap, "post.json"), "wb") as f:
             f.write((json.dumps(post, ensure_ascii=False, indent=2) + "\n").encode("utf-8"))
         with open(os.path.join(snap, "aprovado.json"), "wb") as f:
@@ -206,10 +213,11 @@ def cmd_describe(plano, post_id):
     perfis = ", ".join(f"{p['rede']}:{p['conta']}" for p in post["perfis"])
     linhas = [
         f"Post {post['id']}",
-        f"Vídeo: {post['video']}",
+        f"Vídeo: {post['video']}" if "video" in post else f"Carrossel ({len(post['imagens'])} imagens, nesta ordem): " + ", ".join(post["imagens"]),
         f"Data/hora: {post['data_hora']} (America/Sao_Paulo)",
         f"Perfis: {perfis}",
         f"Hashtags: {' '.join(post['hashtags']) or '(nenhuma)'}",
+        "Conteúdo gerado/alterado por IA: " + ("sim (será declarado)" if post.get("conteudo_ia") else "não"),
         "Legenda:",
         post["legenda"],
     ]

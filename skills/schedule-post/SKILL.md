@@ -1,6 +1,6 @@
 ---
 name: schedule-post
-description: Prepara a postagem de vídeos prontos no Instagram e no TikTok (legenda, hashtags, dias e horários) e só segue com aprovação explícita do usuário. Use depois que os vídeos finais estiverem editados, quando o usuário quiser agendar ou postar.
+description: Prepara a postagem de vídeos ou carrosséis prontos no Instagram e no TikTok (legenda, hashtags, dias e horários) e agenda pelo Metricool (MCP) ou entrega o pacote manual, sempre com aprovação explícita do usuário. Use depois que os vídeos/carrosséis finais estiverem prontos, quando o usuário quiser agendar ou postar.
 ---
 
 # Agendamento de posts (com aprovação humana)
@@ -8,12 +8,12 @@ description: Prepara a postagem de vídeos prontos no Instagram e no TikTok (leg
 Converse em português do Brasil, uma pergunta por vez. **Nunca agende nem publique nada sem a aprovação explícita do usuário.**
 
 ## O que existe hoje (diga isso ao usuário)
-- Agendadores reais (Metricool e outros, por MCP) **ainda não implementados**: dependem de testar com uma conta.
-- O agendador `fake` só registra num arquivo local, para ensaiar o fluxo. **Ele não agenda nada de verdade.**
-- Para postar de verdade hoje, gere o **pacote manual** (passo 7) e agende no próprio Instagram/TikTok, que têm agendamento nativo (conferir as regras no app).
+- **Metricool (MCP)**: é o passo final automático. O script prepara o payload só a partir do que o usuário aprovou; **você (o agente) chama `createScheduledPost`** com ele. O contrato foi lido nas definições das ferramentas, mas **ainda não foi validado em execução**: comece sempre em **modo teste** (ver passo 7).
+- **Pacote manual** (passo 8): continua valendo se o Metricool não estiver conectado, e para postar no app.
+- O agendador `fake` só registra num arquivo local, para ensaiar. Ele não agenda nada de verdade.
 
 ## 1. Entradas
-Os vídeos finais (`final-<id>.mp4`) e o `research.json` da pesquisa. Sem `research.json` válido, use a skill `research-trends` antes.
+Os vídeos finais (`final-<id>.mp4`) **ou os carrosséis** (pasta `carrossel-<id>/` da skill `create-slideshow`) e o `research.json` da pesquisa. Sem `research.json` válido, use a skill `research-trends` antes.
 
 ## 2. Perfis
 Pergunte em quais redes (`instagram`, `tiktok`) e em quais contas cada vídeo vai. Um post pode ter vários perfis.
@@ -29,7 +29,7 @@ python3 "${CLAUDE_PLUGIN_ROOT}/scripts/propose_slots.py" "<cadencia.json>" <quan
 As datas ficam entre 15 minutos e 30 dias à frente, em horário de Brasília (`-03:00`). Se não houver horários suficientes, diga isso e ajuste a cadência com o usuário.
 
 ## 5. Plano e validação
-Monte `schedule-plan.json` (formato em `schemas/schedule-plan.schema.json`: `id`, `video`, `legenda`, `hashtags`, `perfis`, `data_hora`) e valide:
+Monte `schedule-plan.json` (formato em `schemas/schedule-plan.schema.json`: `id`, `legenda`, `hashtags`, `perfis`, `data_hora` e **uma** mídia: `video` (Reel/vídeo) **ou** `imagens` (carrossel, de 2 a 10 imagens **na ordem de postagem**, ex.: `["carrossel-A/slide-01.png", ...]`, dentro da pasta do plano)). Declare `"conteudo_ia": true` quando o vídeo/imagem for gerado ou muito alterado por IA (modo gerado): vai para a declaração de IA do Instagram/TikTok e entra na aprovação. Slideshow só com fotos reais do usuário: `false`. Valide:
 ```bash
 python3 "${CLAUDE_PLUGIN_ROOT}/scripts/validate_schedule.py" "<schedule-plan.json>"
 ```
@@ -42,12 +42,31 @@ python3 "${CLAUDE_PLUGIN_ROOT}/scripts/approval.py" approve "<schedule-plan.json
 ```
 A aprovação fica amarrada ao hash do vídeo, da legenda, das hashtags, dos perfis e do horário. Se qualquer coisa mudar depois, a aprovação deixa de valer e é preciso pedir de novo. Aprovar um post não aprova os outros.
 
-## 7. Entrega
-- **Pacote manual (recomendado hoje):**
+## 7. Agendar pelo Metricool (passo final automático)
+**Pré-requisitos** (peça ao usuário, uma coisa por vez): a conta do Metricool conectada ao Claude (conector/MCP) com Instagram e TikTok conectados na marca; o `blogId` da marca (use `getBrandSettings` para ver marca e fuso; sem rede conectada ele dá erro); e as **URLs públicas** das mídias.
+- O Metricool **não aceita arquivo local**: só link público (ou Google Drive/Dropbox vinculado à conta dele). **Subir os arquivos é ação do usuário**: peça que suba cada arquivo (o vídeo, ou cada imagem do carrossel) e cole o link; **nunca hospede nem envie mídia a um serviço por conta própria**. Monte `media-urls.json` (`{"<caminho da mídia como está no plano>": "https://..."}`, um arquivo por post) e peça ao usuário para **abrir o link e conferir que é o arquivo certo** (o link não é verificado pelo script).
+- O plano grátis do Metricool tem limite de posts agendados por mês (cerca de 20, a conferir): para 30 posts no mês, avise antes e planeje em lotes ou em plano pago.
+- A conta que publica é a que a **marca** tem conectada em cada rede; `conta` no plano é só conferência. O Modo Foto do TikTok (carrossel) via Metricool **não foi verificado**.
+
+Para **cada post aprovado** (um por vez, nunca em lote sem confirmação):
+1. **Simulação** (não grava nada, mostra o payload):
+   ```bash
+   bash "${CLAUDE_PLUGIN_ROOT}/scripts/schedule.sh" "<schedule-plan.json>" <post-id> --approvals "<pasta de aprovações>" --scheduler metricool --urls "<media-urls.json>" --blog-id <blogId> --modo teste
+   ```
+2. **Primeira vez: valide em modo teste** (`--modo teste`, o padrão): `autoPublish=false` (o Metricool **não publica sozinho**, só avisa o celular) e TikTok `SELF_ONLY` (só o dono vê). Confira no Metricool que o post apareceu certo antes de passar para `--modo real`. Só use `--modo real` depois dessa validação **e** de o usuário dizer "confirmo agendar de verdade".
+3. Com a confirmação do usuário, rode o mesmo comando com `--confirm`. O script reserva o post e grava `.snapshots/<post>-*/metricool-payload.json`, **sem enviar nada**.
+4. **Você chama `createScheduledPost`** com os `argumentos` desse arquivo, sem alterar nada. Antes, compare cada campo com o esquema vivo da ferramenta carregada; se algum divergir, **pare e relate** (não adapte por conta própria). A data não pode estar no passado.
+5. Registre o resultado:
+   - criou: `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/schedule_log.py" commit "<plano>" <post-id> "<pasta do plano>/.schedule-log.json" "<id ou plannerUrl devolvido>"`;
+   - falhou e nada foi criado: `schedule_log.py release ... --conferido`; se houver dúvida se criou, **confira com `getScheduledPosts`** antes de liberar.
+6. O mesmo post nunca é agendado duas vezes. Alterar um post já agendado: `updateScheduledPost` sobrescreve na hora (e troca o id), e o conteúdo precisa de nova aprovação; não há ferramenta de cancelar, então cancelamento é feito no app do Metricool, e só depois `schedule_log.py supersede`.
+
+## 7b. Entrega manual (alternativa)
+- **Pacote manual:**
   ```bash
   bash "${CLAUDE_PLUGIN_ROOT}/scripts/export_package.sh" "<schedule-plan.json>" <post-id> "<pasta de saída>"
   ```
-  Entrega o vídeo, `legenda.txt`, `horario.txt` e `COMO-AGENDAR.md`. O usuário agenda no app.
+  Entrega o vídeo (ou `imagem-01`, `imagem-02`... do carrossel, para subir nessa ordem), `legenda.txt`, `horario.txt` e `COMO-AGENDAR.md`. O usuário agenda no app.
 - **Ensaio com o agendador `fake`:**
   ```bash
   bash "${CLAUDE_PLUGIN_ROOT}/scripts/schedule.sh" "<schedule-plan.json>" <post-id> --approvals "<pasta de aprovações>" --scheduler fake

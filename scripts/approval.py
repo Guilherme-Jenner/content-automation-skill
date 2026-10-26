@@ -5,7 +5,7 @@
   approval.py verify  <plano> <post-id> <dir-aprovacoes>
 
 `approve` só deve ser rodado depois de o usuário dizer "aprovo" ao resumo do post. Grava
-<dir>/<post-id>.approval.json com o sha256 do vídeo e do conteúdo (legenda, hashtags, perfis, data/hora).
+<dir>/<post-id>.approval.json com o sha256 do vídeo (ou das imagens do carrossel, na ordem) e do conteúdo (legenda, hashtags, perfis, data/hora).
 `verify` NUNCA aprova nada: só confere se o arquivo existe e se tudo ainda bate (código 0).
 """
 import hashlib
@@ -17,7 +17,7 @@ import tempfile
 from datetime import datetime, timezone
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from validate_schedule import ID_VALIDO, agora, caminho_do_video, erros_do_plano  # noqa: E402
+from validate_schedule import ID_VALIDO, agora, erros_do_plano, midias_do_post  # noqa: E402
 
 
 class Recusa(Exception):
@@ -32,18 +32,25 @@ def sha256_arquivo(caminho):
     return h.hexdigest()
 
 
+def sha256_midia(plano_caminho, post):
+    """Hash da mídia aprovada: o do arquivo (vídeo) ou, no carrossel, o das imagens NA ORDEM (ordem importa)."""
+    hashes = [sha256_arquivo(m) for m in midias_do_post(plano_caminho, post)]
+    if "video" in post:
+        return hashes[0]
+    return hashlib.sha256("\n".join(hashes).encode("utf-8")).hexdigest()
+
+
 def sha256_conteudo(post):
-    canon = json.dumps(
-        {
-            "id": post["id"],
-            "legenda": post["legenda"],
-            "hashtags": post["hashtags"],
-            "perfis": sorted([x["rede"], x["conta"]] for x in post["perfis"]),
-            "data_hora": post["data_hora"],
-        },
-        sort_keys=True,
-        ensure_ascii=False,
-    )
+    campos = {
+        "id": post["id"],
+        "legenda": post["legenda"],
+        "hashtags": post["hashtags"],
+        "perfis": sorted([x["rede"], x["conta"]] for x in post["perfis"]),
+        "data_hora": post["data_hora"],
+    }
+    if "conteudo_ia" in post:   # só entra no hash quando declarado: aprovações antigas continuam valendo
+        campos["conteudo_ia"] = post["conteudo_ia"]
+    canon = json.dumps(campos, sort_keys=True, ensure_ascii=False)
     return hashlib.sha256(canon.encode("utf-8")).hexdigest()
 
 
@@ -74,7 +81,7 @@ def cmd_approve(args, now, force):
     os.makedirs(diretorio, exist_ok=True)
     registro = {
         "post_id": post_id,
-        "sha256_video": sha256_arquivo(caminho_do_video(plano_caminho, post["video"])),
+        "sha256_video": sha256_midia(plano_caminho, post),   # nome mantido por compatibilidade: vale também para o carrossel
         "sha256_conteudo": sha256_conteudo(post),
         "data_hora": post["data_hora"],
         "perfis": post["perfis"],
@@ -107,11 +114,11 @@ def verificar(plano_caminho, post_id, diretorio):
         raise Recusa(f"o arquivo de aprovação está corrompido: {arq}")
     if reg.get("post_id") != post_id:
         raise Recusa(f"a aprovação em {arq} é de outro post ({reg.get('post_id')})")
-    video = caminho_do_video(plano_caminho, post["video"])
-    if not os.path.isfile(video):
-        raise Recusa(f"vídeo não encontrado: {post['video']}")
-    if sha256_arquivo(video) != reg.get("sha256_video"):
-        raise Recusa("o vídeo mudou depois da aprovação; peça uma nova aprovação")
+    for m in midias_do_post(plano_caminho, post):
+        if not os.path.isfile(m):
+            raise Recusa(f"arquivo de mídia não encontrado: {m}")
+    if sha256_midia(plano_caminho, post) != reg.get("sha256_video"):
+        raise Recusa("o vídeo (ou as imagens, ou a ordem delas) mudou depois da aprovação; peça uma nova aprovação")
     if sha256_conteudo(post) != reg.get("sha256_conteudo"):
         raise Recusa("o conteúdo (legenda, hashtags, perfis ou data/hora) mudou depois da aprovação; peça uma nova aprovação")
     return post, reg

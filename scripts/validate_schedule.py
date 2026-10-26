@@ -3,6 +3,7 @@
 
 Erros (exit 1): schema; ids inseguros ou repetidos (maiúsculas contam como iguais); vídeo inexistente;
 data_hora fora do formato AAAA-MM-DDTHH:MM:SS-03:00, a menos de 15 minutos de agora ou a mais de 30 dias;
+post sem mídia ou com vídeo E imagens ao mesmo tempo; carrossel com menos de 2 ou mais de 10 imagens, ou formato de imagem não suportado;
 perfis vazios ou duplicados; hashtags inválidas; legenda acima do limite.
 
 Uso: validate_schedule.py <schedule-plan.json> [--post <id>] [--now <ISO com fuso>]   (--now: só em testes)
@@ -50,6 +51,16 @@ def caminho_do_video(caminho_plano, video):
     return video if os.path.isabs(video) else os.path.join(base, video)
 
 
+def midias_do_post(caminho_plano, post):
+    """Arquivos de mídia do post, na ordem: [vídeo] ou as imagens do carrossel."""
+    nomes = [post["video"]] if "video" in post else post.get("imagens", [])
+    return [caminho_do_video(caminho_plano, m) for m in nomes]
+
+
+EXTENSOES_IMAGEM = {".jpg", ".jpeg", ".png", ".webp"}
+MAX_IMAGENS = 10
+
+
 def erros_do_plano(caminho, now, post_id=None):
     with open(SCHEMA, encoding="utf-8") as f:
         schema = json.load(f)
@@ -71,8 +82,21 @@ def erros_do_plano(caminho, now, post_id=None):
         # só para o post-alvo: um post vencido não pode bloquear os demais.
         if post_id is not None and p["id"] != post_id:
             continue
-        if not os.path.isfile(caminho_do_video(caminho, p["video"])):
-            erros.append(f"{nome}.video não encontrado: {p['video']}")
+        if ("video" in p) == ("imagens" in p):
+            erros.append(f"{nome}: informe `video` (Reel/vídeo) OU `imagens` (carrossel), um dos dois")
+        elif "video" in p:
+            if not os.path.isfile(caminho_do_video(caminho, p["video"])):
+                erros.append(f"{nome}.video não encontrado: {p['video']}")
+        else:
+            if len(p["imagens"]) > MAX_IMAGENS:
+                erros.append(f"{nome}.imagens: no máximo {MAX_IMAGENS} imagens por carrossel (tem {len(p['imagens'])})")
+            if len(set(p["imagens"])) != len(p["imagens"]):
+                erros.append(f"{nome}.imagens tem imagem repetida")
+            for img in p["imagens"]:
+                if os.path.splitext(img)[1].lower() not in EXTENSOES_IMAGEM:
+                    erros.append(f"{nome}.imagens: formato não suportado '{img}' (use .jpg, .jpeg, .png ou .webp)")
+                elif not os.path.isfile(caminho_do_video(caminho, img)):
+                    erros.append(f"{nome}.imagens: arquivo não encontrado: {img}")
         if not DATA_HORA.match(p["data_hora"]):
             erros.append(f"{nome}.data_hora deve estar no formato AAAA-MM-DDTHH:MM:SS-03:00 (fuso America/Sao_Paulo)")
         else:

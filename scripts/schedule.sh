@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Agenda um post aprovado. Por padrão apenas SIMULA (não grava nada).
-# Uso: schedule.sh <plano> <post-id> --approvals <dir> --scheduler fake [--confirm] [--now <ISO>, só em testes]
+# Uso: schedule.sh <plano> <post-id> --approvals <dir> --scheduler fake [--confirm] [--urls <media-urls.json> --blog-id <id> --modo teste|real] [--now <ISO>, só em testes]
 #   - o log fica SEMPRE ao lado do plano (<pasta do plano>/.schedule-log.json): não há opção para trocá-lo,
 #     senão o mesmo post poderia ser agendado de novo por outro log;
 #   - o post precisa ter aprovação válida; a verificação é refeita sob a trava na hora de reservar, e o
@@ -8,7 +8,10 @@
 #   - --confirm agenda de verdade; só use depois que o usuário confirmar de novo, em linguagem clara;
 #   - o mesmo post (mesmo vídeo e conteúdo) nunca é agendado duas vezes; mudar um post já agendado exige
 #     cancelar o anterior no agendador e rodar `schedule_log.py supersede` (ver a skill schedule-post).
-# Agendadores reais (MCP) ainda não estão implementados: só existe o `fake`.
+#   - `--scheduler metricool`: o MCP do Metricool é ferramenta do AGENTE, não de um script. Com --confirm o script reserva,
+#     grava <snapshot>/metricool-payload.json (só do snapshot aprovado) e PARA, com a reserva em_andamento; o agente
+#     chama `createScheduledPost` com esse payload e então roda `schedule_log.py commit` (id do Metricool) ou `release`.
+#     Exige --urls <media-urls.json> (links públicos das mídias) e --blog-id <id da marca>; --modo teste (padrão) | real.
 set -eu
 _src="${BASH_SOURCE[0]}"; case "$_src" in */*) _dir="${_src%/*}" ;; *) _dir=. ;; esac; here="$(cd "$_dir" && pwd)"   # bash puro: sem dirname externo
 # shellcheck source=lib/common.sh
@@ -16,13 +19,16 @@ _src="${BASH_SOURCE[0]}"; case "$_src" in */*) _dir="${_src%/*}" ;; *) _dir=. ;;
 
 [ $# -ge 2 ] || die "uso: schedule.sh <plano> <post-id> --approvals <dir> --scheduler fake [--confirm]"
 plan="$(abspath "$1")"; post="$2"; shift 2
-approvals=""; scheduler=""; confirm=0; now=""
+approvals=""; scheduler=""; confirm=0; now=""; urls=""; blog_id=""; modo="teste"
 while [ $# -gt 0 ]; do
   case "$1" in
     --approvals) [ $# -ge 2 ] || die "--approvals exige um diretório"; approvals="$(abspath "$2")"; shift 2 ;;
     --scheduler) [ $# -ge 2 ] || die "--scheduler exige um nome (por enquanto: fake)"; scheduler="$2"; shift 2 ;;
     --now) [ $# -ge 2 ] || die "--now exige uma data ISO"; now="$2"; shift 2 ;;
     --confirm) confirm=1; shift ;;
+    --urls) [ $# -ge 2 ] || die "--urls exige o media-urls.json"; urls="$(abspath "$2")"; shift 2 ;;
+    --blog-id) [ $# -ge 2 ] || die "--blog-id exige o id da marca no Metricool"; blog_id="$2"; shift 2 ;;
+    --modo) [ $# -ge 2 ] || die "--modo exige teste ou real"; modo="$2"; shift 2 ;;
     *) die "opção desconhecida: $1 (o log de agendamentos tem local fixo ao lado do plano, não há --log)" ;;
   esac
 done
@@ -31,7 +37,10 @@ done
 [ -n "$scheduler" ] || die "--scheduler é obrigatório (por enquanto: fake)"
 case "$scheduler" in
   fake) ;;
-  *) die "o agendador '$scheduler' ainda não implementado (só existe o fake); use o pacote manual: export_package.sh" ;;
+  metricool)
+    [ -n "$urls" ] && [ -n "$blog_id" ] || die "--scheduler metricool exige --urls <media-urls.json> e --blog-id <id da marca>"
+    case "$modo" in teste|real) ;; *) die "--modo deve ser teste ou real" ;; esac ;;
+  *) die "o agendador '$scheduler' ainda não implementado (use fake ou metricool); ou o pacote manual: export_package.sh" ;;
 esac
 need_cmd python3 "brew install python"
 log="$(dirname "$plan")/.schedule-log.json"
@@ -55,6 +64,10 @@ esac
 
 if [ "$confirm" -eq 0 ]; then
   python3 "$here/schedule_log.py" describe "$plan" "$post"
+  if [ "$scheduler" = metricool ]; then
+    echo "--- Payload que seria usado (modo $modo) ---"
+    python3 "$here/metricool_payload.py" plano "$plan" "$post" --urls "$urls" --blog-id "$blog_id" --modo "$modo" || die "não foi possível montar o payload do Metricool; nada foi agendado"
+  fi
   echo "SIMULAÇÃO: nada foi agendado. Para agendar de verdade rode de novo com --confirm (só depois do 'aprovo' do usuário)."
   exit 0
 fi
@@ -67,6 +80,23 @@ if [ "$rc" -ne 0 ]; then
   exit "$rc"
 fi
 snapshot="$(printf '%s\n' "$saida" | tail -1)"
+
+if [ "$scheduler" = metricool ]; then
+  payload="$snapshot/metricool-payload.json"
+  if ! python3 "$here/metricool_payload.py" snapshot "$snapshot" --urls "$urls" --blog-id "$blog_id" --modo "$modo" > "$payload"; then
+    python3 "$here/schedule_log.py" release "$plan" "$post" "$log" --conferido >/dev/null
+    die "não foi possível montar o payload do Metricool; a reserva foi liberada e nada ficou agendado"
+  fi
+  cat <<MSG
+PAYLOAD PRONTO: $payload
+Reserva do post '$post' em andamento (nada foi enviado ao Metricool ainda).
+AGENTE: chame a ferramenta createScheduledPost do MCP do Metricool com os argumentos de "argumentos" nesse arquivo, sem alterar nada
+(confira antes cada campo contra o esquema da ferramenta; se divergir, pare e relate). Depois:
+  - deu certo:  python3 "$here/schedule_log.py" commit "$plan" "$post" "$log" "<id ou plannerUrl devolvido>"
+  - deu erro/nada criado:  python3 "$here/schedule_log.py" release "$plan" "$post" "$log" --conferido
+MSG
+  exit 0
+fi
 
 if ! externo="$("$here/schedulers/$scheduler.sh" "$snapshot")"; then
   python3 "$here/schedule_log.py" release "$plan" "$post" "$log" --conferido >/dev/null

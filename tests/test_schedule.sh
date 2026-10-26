@@ -87,8 +87,8 @@ test_expired_deadline_between_approval_and_schedule_rejected() {
 
 test_unknown_scheduler_not_implemented() {
   local d out; d="$(mktemp -d)"; _setup "$d"; _approve "$d"
-  out=$(_sch "$d/plan.json" p1 --approvals "$d/ap" --scheduler metricool --now "$NOW" --confirm 2>&1) \
-    && _fail "agendador real não existe ainda"
+  out=$(_sch "$d/plan.json" p1 --approvals "$d/ap" --scheduler planoly --now "$NOW" --confirm 2>&1) \
+    && _fail "agendador desconhecido aceito"
   assert_contains "$out" "ainda não implementado" "mensagem"
   [ ! -e "$d/.schedule-log.json" ] || _fail "não deveria gravar nada"
   out=$(_sch "$d/plan.json" p1 --approvals "$d/ap" --now "$NOW" 2>&1) && _fail "--scheduler é obrigatório"

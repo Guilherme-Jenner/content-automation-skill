@@ -2,7 +2,7 @@
 """Monta o pacote para agendar um post manualmente no Instagram/TikTok (plano B, sem MCP).
 
 Uso: export_package.py <plano> <post-id> <saida-dir> [--force] [--now <ISO>]
-Cria <saida-dir>/<post-id>/ com video.<ext>, legenda.txt, horario.txt e COMO-AGENDAR.md.
+Cria <saida-dir>/<post-id>/ com video.<ext> (ou imagem-NN.<ext> no carrossel), legenda.txt, horario.txt e COMO-AGENDAR.md.
 Não publica nem agenda nada; só exige que o plano esteja válido.
 """
 import os
@@ -13,13 +13,13 @@ from datetime import datetime
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from approval import Recusa, achar_post  # noqa: E402
-from validate_schedule import agora, caminho_do_video, erros_do_plano  # noqa: E402
+from validate_schedule import agora, erros_do_plano, midias_do_post  # noqa: E402
 
 DIAS = ["segunda-feira", "terça-feira", "quarta-feira", "quinta-feira", "sexta-feira", "sábado", "domingo"]
 
 COMO_AGENDAR = """# Como agendar este post manualmente
 
-Arquivos desta pasta: `video`, `legenda.txt` (cole como está) e `horario.txt` (dia, hora e perfis).
+Arquivos desta pasta: `video` (ou `imagem-01`, `imagem-02`... se for carrossel: suba as imagens **nesta ordem**; no TikTok use o Modo Foto), `legenda.txt` (cole como está) e `horario.txt` (dia, hora e perfis).
 
 > Os nomes de botões, os limites e as regras das redes mudam com frequência: **conferir no app** antes de contar
 > com qualquer passo abaixo. Se algo estiver diferente, vale o que o app mostrar.
@@ -66,8 +66,12 @@ def main(argv):
             raise Recusa(f"o pacote já existe: {destino} (use --force para refazer)")
         os.makedirs(saida, exist_ok=True)
         tmp = tempfile.mkdtemp(dir=saida, prefix=f".{post_id}.")   # nome único: duas execuções não se pisam
-        video = caminho_do_video(plano, post["video"])
-        shutil.copyfile(video, os.path.join(tmp, "video" + os.path.splitext(video)[1]))
+        origens = midias_do_post(plano, post)
+        if "video" in post:
+            shutil.copyfile(origens[0], os.path.join(tmp, "video" + os.path.splitext(origens[0])[1]))
+        else:   # carrossel: imagem-01.png, imagem-02.png... (suba nesta ordem)
+            for i, o in enumerate(origens, 1):
+                shutil.copyfile(o, os.path.join(tmp, f"imagem-{i:02d}" + os.path.splitext(o)[1].lower()))
         legenda = post["legenda"] + "\n"
         if post["hashtags"]:
             legenda = post["legenda"] + "\n\n" + " ".join(post["hashtags"]) + "\n"

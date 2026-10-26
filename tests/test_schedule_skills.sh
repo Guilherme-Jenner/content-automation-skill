@@ -18,7 +18,8 @@ test_schedule_skill_has_the_approval_gates() {
 
 test_schedule_skill_is_honest_about_real_schedulers() {
   local s; s=$(cat "$ROOT/skills/schedule-post/SKILL.md")
-  assert_contains "$s" "ainda não implementad" "agendadores reais ainda não existem"
+  assert_contains "$s" "ainda não foi validado em execução" "Metricool ainda não validado com a conta real"
+  assert_contains "$s" "modo teste" "começa em modo teste"
   assert_contains "$s" "fake" "explica que o agendador existente é falso"
   assert_contains "$s" "nunca" "regra de nunca agendar/publicar sem aprovação"
 }
