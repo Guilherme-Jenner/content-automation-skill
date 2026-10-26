@@ -45,7 +45,9 @@ A aprovação fica amarrada ao hash do vídeo, da legenda, das hashtags, dos per
 ## 7. Agendar pelo Metricool (passo final automático)
 **Pré-requisitos** (confira, uma coisa por vez):
 - **Metricool conectado ao Claude** e, **na própria marca do Metricool, o Instagram e/ou o TikTok conectados** (sem rede conectada, `getBrandSettings` dá erro e nada pode ser agendado; o erro traz o link para conectar). Rode `getBrandSettings` (só leitura): ele dá o `blogId` da marca, o **fuso** (use-o em `--timezone`) e as redes conectadas.
-- **Google Drive conectado ao Claude** (MCP) **e vinculado na conta do Metricool** (Metricool > configurações da conta > integrações; uma vez só, no navegador). O Metricool não aceita arquivo local, só link; os links do Drive só funcionam por essa vinculação, e os arquivos **continuam privados** (sem "qualquer pessoa com o link").
+- **Google Drive conectado ao Claude** (MCP). O Metricool não aceita arquivo local, só link. Dois jeitos de ele ler o link do Drive:
+  - **Pasta pública por link** (funciona em qualquer plano; é o que o usuário escolheu quando a integração do Drive do Metricool é paga): a pasta de mídias fica "**qualquer pessoa com o link: leitor**". **Isso expõe os arquivos a quem tiver o link: explique ao usuário e só siga com o "pode" explícito**; terminados os agendamentos, ofereça voltar a pasta para "restrito". Você **não consegue** fazer esse compartilhamento (`share_file` do MCP só compartilha com pessoas/grupos): peça ao usuário (Drive no navegador > botão direito na pasta > Compartilhar > Acesso geral > "Qualquer pessoa com o link" > Leitor).
+  - **Drive vinculado na conta do Metricool** (integração paga do Metricool; arquivos privados). Use `--link view` no `drive_links.py`.
 
 **Levar as mídias ao Drive, sem API nem credenciais** (depois de aprovar os posts):
 1. Prepare a pasta (só posts aprovados, nomes únicos como `clo__p2__01__ab12cd34.png`):
@@ -53,12 +55,12 @@ A aprovação fica amarrada ao hash do vídeo, da legenda, das hashtags, dos per
    python3 "${CLAUDE_PLUGIN_ROOT}/scripts/stage_media.py" "<schedule-plan.json>" --approvals "<pasta de aprovações>" [--destino "<pasta>"]
    ```
    Padrão: `<pasta do plano>/para-drive`. Se o usuário tem o **Google Drive para computador**, use como `--destino` uma pasta dentro do Drive dele (ex.: `~/Google Drive/Meu Drive/Clo`): o upload é automático. Se não, peça que **arraste o conteúdo da pasta para o Drive no navegador** (uma ação só, para todos os posts).
-2. Espere a sincronização/upload terminar e busque cada post com o MCP do Drive: `search_files` com `title contains 'clo__<post-id>__'` (use `excludeContentSnippets: true`). **Só leia**: nunca envie arquivos pelo MCP do Drive (`create_file` exige o conteúdo em base64 dentro da conversa: inviável para imagens e vídeos).
+2. Espere a sincronização/upload terminar e busque cada post com o MCP do Drive: `search_files` com `title contains 'clo__<post-id>__'` (use `excludeContentSnippets: true`). **Só leia**: nunca envie arquivos pelo MCP do Drive (`create_file` exige o conteúdo em base64 dentro da conversa: inviável para imagens e vídeos). No modo de pasta pública, **confira com `get_file_permissions`** (em um arquivo de cada post) que existe permissão do tipo `anyone` (leitor); se não houver, **pare** e peça ao usuário para compartilhar a pasta, em vez de agendar um link que o Metricool não consegue abrir.
 3. Salve o resultado como veio em `found.json` (lista de `{id, name}`) e gere os links:
    ```bash
    python3 "${CLAUDE_PLUGIN_ROOT}/scripts/drive_links.py" "<schedule-plan.json>" --found "<found.json>"
    ```
-   Isso escreve `urls-<post-id>.json` (o `--urls` do agendamento). Ele recusa se faltar arquivo (sincronização incompleta) ou houver cópia duplicada; nesse caso espere/limpe e busque de novo. O nome do arquivo leva o início do hash do conteúdo, então um arquivo trocado não é aceito.
+   Isso escreve `urls-<post-id>.json` (o `--urls` do agendamento; links diretos `uc?export=download`, ou `--link view` com o Drive vinculado no Metricool). Ele recusa se faltar arquivo (sincronização incompleta) ou houver cópia duplicada; nesse caso espere/limpe e busque de novo. O nome do arquivo leva o início do hash do conteúdo, então um arquivo trocado não é aceito.
 - Alternativa avançada (opcional, exige uma credencial do Google Cloud): `drive_upload.py` envia por API (`docs/google-drive.md`). Não é o caminho padrão.
 - O plano grátis do Metricool tem limite de posts agendados por mês (cerca de 20, a conferir): para 30 posts no mês, avise antes e planeje em lotes ou em plano pago.
 - A conta que publica é a que a **marca** tem conectada em cada rede; `conta` no plano é só conferência. No TikTok, post só de fotos aceita imagens, mas a declaração de IA (`isAigc`) não vale para post só de fotos (a ferramenta a ignora): confira a regra da rede.

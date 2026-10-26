@@ -64,10 +64,10 @@ test_drive_links_builds_urls_from_mcp_search_results() {
   python3 "$ROOT/scripts/stage_media.py" "$d/plan.json" --approvals "$d/ap" >/dev/null 2>&1; _found "$d"
   out=$(python3 "$ROOT/scripts/drive_links.py" "$d/plan.json" --found "$d/found.json" 2>&1) || _fail "links falhou: $out"
   assert_file_exists "$d/urls-p1.json"; assert_file_exists "$d/urls-p2.json"
-  assert_contains "$(cat "$d/urls-p2.json")" "https://drive.google.com/file/d/" "link de visualização"
+  assert_contains "$(cat "$d/urls-p2.json")" "https://drive.google.com/uc?export=download&id=" "link direto por padrão"
   assert_eq "3" "$(python3 -c "import json,sys; print(len(json.load(open(sys.argv[1]))))" "$d/urls-p2.json")" "3 links no carrossel"
-  python3 "$ROOT/scripts/drive_links.py" "$d/plan.json" --found "$d/found.json" --link download >/dev/null 2>&1
-  assert_contains "$(cat "$d/urls-p1.json")" "export=download" "link de download"
+  python3 "$ROOT/scripts/drive_links.py" "$d/plan.json" --found "$d/found.json" --link view >/dev/null 2>&1
+  assert_contains "$(cat "$d/urls-p1.json")" "/view" "link de visualização"
   # os links alimentam o payload do Metricool
   python3 "$ROOT/scripts/metricool_payload.py" plano "$d/plan.json" p2 --urls "$d/urls-p2.json" --blog-id 7 >/dev/null || _fail "payload com os links do Drive"
   rm -rf "$d"

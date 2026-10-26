@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 """Gera os `urls-<post>.json` (links do Google Drive) a partir do resultado da busca do MCP do Drive.
 
-Uso: drive_links.py <plano> --found <found.json> [--posts p1,p2] [--link view|download]
+Uso: drive_links.py <plano> --found <found.json> [--posts p1,p2] [--link download|view]
   found.json: a lista de arquivos achados com `search_files` do MCP do Drive, copiada como veio:
               [{"id": "...", "name": "clo__p2__01__ab12cd34.png"}, ...]  (aceita também {"files": [...]})
   Confere, para cada mídia preparada por `stage_media.py`, que existe EXATAMENTE um arquivo com o nome esperado (o nome leva o
   início do hash do conteúdo: arquivo trocado = nome diferente). Faltando (ainda sincronizando?) ou duplicado: recusa, sem
   gerar nada para aquele post. Escreve <pasta do plano>/urls-<post-id>.json ({caminho da mídia no plano: link}).
-  Os links não são públicos: o Metricool só os lê se o Google Drive estiver vinculado na conta dele.
+  `download` (padrão) é o link direto do arquivo, o que o Metricool precisa quando a pasta está "qualquer pessoa com o link"
+  (plano sem a integração do Drive). `view` é o link de visualização (serve com o Drive vinculado na conta do Metricool).
 """
 import json
 import os
@@ -23,9 +24,9 @@ class Recusa(Exception):
 
 
 def link(id_, formato):
-    if formato == "download":
-        return f"https://drive.google.com/uc?export=download&id={id_}"
-    return f"https://drive.google.com/file/d/{id_}/view"
+    if formato == "view":
+        return f"https://drive.google.com/file/d/{id_}/view"
+    return f"https://drive.google.com/uc?export=download&id={id_}"
 
 
 def ler_achados(caminho):
@@ -102,7 +103,7 @@ def main(argv):
     if len(pos) != 1 or "--found" not in op:
         print(__doc__, file=sys.stderr)
         return 2
-    formato = op.get("--link", "view")
+    formato = op.get("--link", "download")
     try:
         if formato not in ("view", "download"):
             raise Recusa("--link deve ser view ou download")
