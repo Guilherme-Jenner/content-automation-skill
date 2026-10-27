@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # Monta os carrosséis (e, opcionalmente, o vídeo) das variantes APROVADAS de um slideshow-plan.json.
 # Uso: make-slideshow.sh <slideshow-plan.json> <diretorio de saida> [--formato carrossel|video|ambos] [--aspecto 9:16|4:5] [--only <id>] [--force]
-#   --formato carrossel (padrão): só as páginas PNG, para postar como carrossel do Instagram / Modo Foto do TikTok
+#   --formato carrossel (padrão): só as páginas JPEG (o TikTok recusa PNG), para postar como carrossel do Instagram / Modo Foto do TikTok
 #   --formato video: só o vídeo; ambos: os dois
 #   --aspecto 9:16 (padrão, 1080x1920: TikTok e Reels) ou 4:5 (1080x1350: carrossel do feed do Instagram)
 # Por variante aprovada gera:
-#   carrossel-<id>/slide-NN.png   uma página por slide, já com o texto, na ordem de postagem
+#   carrossel-<id>/slide-NN.jpg   uma página por slide, já com o texto, na ordem de postagem
 #   slideshow-<id>.mp4 e .srt     (formato video/ambos) cada foto na duração do slide, legenda queimada, trilha opcional
 # Não gasta crédito: tudo local (ffmpeg). As fotos nunca são modificadas. Variantes não aprovadas são puladas.
 set -eu
@@ -66,7 +66,7 @@ monta() { # id
     n=$((n + 1))
     mid="$(python3 -c "import sys; print(float(sys.argv[1]) + float(sys.argv[2]) / 2)" "$t" "$dur")"
     t="$(python3 -c "import sys; print(float(sys.argv[1]) + float(sys.argv[2]))" "$t" "$dur")"
-    ffmpeg -v error -y -ss "$mid" -i "$work/legendado.mp4" -frames:v 1 "$outdir/carrossel-$id/$(printf 'slide-%02d.png' "$n")" </dev/null || return 1
+    ffmpeg -v error -y -ss "$mid" -i "$work/legendado.mp4" -frames:v 1 -q:v 2 "$outdir/carrossel-$id/$(printf 'slide-%02d.jpg' "$n")" </dev/null || return 1
   done < <(python3 "$here/slideshow_info.py" slides "$plan" "$id")
 
   [ "$formato" != carrossel ] || return 0

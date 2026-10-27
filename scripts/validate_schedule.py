@@ -57,7 +57,7 @@ def midias_do_post(caminho_plano, post):
     return [caminho_do_video(caminho_plano, m) for m in nomes]
 
 
-EXTENSOES_IMAGEM = {".jpg", ".jpeg", ".png", ".webp"}
+EXTENSOES_IMAGEM = {".jpg", ".jpeg", ".webp"}   # o TikTok (Modo Foto) recusa PNG e outros formatos
 MAX_IMAGENS = 10
 
 
@@ -94,7 +94,8 @@ def erros_do_plano(caminho, now, post_id=None):
                 erros.append(f"{nome}.imagens tem imagem repetida")
             for img in p["imagens"]:
                 if os.path.splitext(img)[1].lower() not in EXTENSOES_IMAGEM:
-                    erros.append(f"{nome}.imagens: formato não suportado '{img}' (use .jpg, .jpeg, .png ou .webp)")
+                    erros.append(f"{nome}.imagens: formato não aceito '{img}': o carrossel/Modo Foto só aceita JPEG (.jpg, .jpeg) ou WebP (.webp); "
+                                 "PNG e outros formatos são recusados pelo TikTok. Converta a imagem (make-slideshow.sh já gera JPEG)")
                 elif not os.path.isfile(caminho_do_video(caminho, img)):
                     erros.append(f"{nome}.imagens: arquivo não encontrado: {img}")
         titulo = p.get("titulo_tiktok", "")

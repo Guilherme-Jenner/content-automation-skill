@@ -6,13 +6,13 @@ NOW="2026-10-20T10:00:00-03:00"
 # _sg <dir> → plano com p1 (vídeo), p2 (carrossel de 3 imagens) e p3 (vídeo, sem aprovação); aprova p1 e p2
 _sg() {
   local d="$1"; mkdir -p "$d"
-  printf 'video' > "$d/v.mp4"; printf 'a' > "$d/s1.png"; printf 'b' > "$d/s2.png"; printf 'c' > "$d/s3.png"
+  printf 'video' > "$d/v.mp4"; printf 'a' > "$d/s1.jpg"; printf 'b' > "$d/s2.jpg"; printf 'c' > "$d/s3.jpg"
   python3 - "$d/plan.json" <<'PY'
 import json, sys
 perfis = [{"rede": "instagram", "conta": "clo.app"}]
 json.dump({"posts": [
   {"id": "p1", "video": "v.mp4", "legenda": "a", "hashtags": [], "perfis": perfis, "data_hora": "2026-10-21T12:00:00-03:00"},
-  {"id": "p2", "imagens": ["s1.png", "s2.png", "s3.png"], "legenda": "b", "hashtags": [], "perfis": perfis, "data_hora": "2026-10-22T12:00:00-03:00"},
+  {"id": "p2", "imagens": ["s1.jpg", "s2.jpg", "s3.jpg"], "legenda": "b", "hashtags": [], "perfis": perfis, "data_hora": "2026-10-22T12:00:00-03:00"},
   {"id": "p3", "video": "v.mp4", "legenda": "c", "hashtags": [], "perfis": perfis, "data_hora": "2026-10-23T12:00:00-03:00"}]}, open(sys.argv[1], "w"))
 PY
   for p in p1 p2; do python3 "$ROOT/scripts/approval.py" approve "$d/plan.json" $p "$d/ap" --now "$NOW" >/dev/null 2>&1 || _fail "approve $p"; done
@@ -52,9 +52,9 @@ test_stage_media_changed_image_gets_a_new_name() {
   local d a b; d="$(mktemp -d)"; _sg "$d"
   python3 "$ROOT/scripts/stage_media.py" "$d/plan.json" --approvals "$d/ap" >/dev/null 2>&1
   a=$(ls "$d/para-drive" | grep p2__02)
-  printf 'bb' > "$d/s2.png"; python3 "$ROOT/scripts/approval.py" approve "$d/plan.json" p2 "$d/ap" --force --now "$NOW" >/dev/null 2>&1
+  printf 'bb' > "$d/s2.jpg"; python3 "$ROOT/scripts/approval.py" approve "$d/plan.json" p2 "$d/ap" --force --now "$NOW" >/dev/null 2>&1
   python3 "$ROOT/scripts/stage_media.py" "$d/plan.json" --approvals "$d/ap" --posts p2 >/dev/null 2>&1
-  b=$(python3 -c "import json,sys; print(json.load(open(sys.argv[1]))['posts']['p2']['midias']['s2.png']['nome'])" "$d/.drive-staging.json")
+  b=$(python3 -c "import json,sys; print(json.load(open(sys.argv[1]))['posts']['p2']['midias']['s2.jpg']['nome'])" "$d/.drive-staging.json")
   [ "$a" != "$b" ] || _fail "imagem alterada manteve o mesmo nome"
   rm -rf "$d"
 }

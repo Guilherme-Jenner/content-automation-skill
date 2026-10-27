@@ -2,10 +2,13 @@
 
 Cada versão em `.claude-plugin/plugin.json` precisa de uma seção aqui. Quem instalou só recebe a atualização quando o `version` muda.
 
+## 0.3.1
+- Imagens do carrossel/Modo Foto: **só JPEG ou WebP**. `make-slideshow.sh` agora gera `slide-NN.jpg` (antes PNG, que o TikTok recusa) e `validate_schedule.py` barra PNG e outros formatos com mensagem explícita.
+
 ## 0.3.0
 - Slideshow: `hook_fixo` opcional no plano (mesmo formato e texto de hook em todas as variantes; o resto varia sem justificativa). O padrão continua sendo hook novo em cada variante, com roteiro de estrutura viral.
 - TikTok em Modo Foto: música recomendada ligada (`autoAddMusic`); título vazio por padrão, só vai com `titulo_tiktok` no plano (até 90 unidades UTF-16, entra na aprovação). Validado em publicação real.
-- Slideshow/carrossel a partir de fotos do usuário (`create-slideshow`): roteiro por slide (hook, problema, app, prova, CTA), até 5 variantes reaproveitando as mesmas fotos com hooks e anúncios diferentes, aprovação por variante, PNGs do carrossel nativo (Instagram) / Modo Foto (TikTok) em 9:16 ou 4:5, com vídeo opcional (`make-slideshow.sh`), sem custo.
+- Slideshow/carrossel a partir de fotos do usuário (`create-slideshow`): roteiro por slide (hook, problema, app, prova, CTA), até 5 variantes reaproveitando as mesmas fotos com hooks e anúncios diferentes, aprovação por variante, páginas JPEG do carrossel nativo (Instagram) / Modo Foto (TikTok) em 9:16 ou 4:5, com vídeo opcional (`make-slideshow.sh`), sem custo.
 
 - Agendamento real pelo Metricool (MCP): `schedule.sh --scheduler metricool` reserva o post aprovado e prepara o payload de `createScheduledPost` (`metricool_payload.py`), o agente faz a chamada e registra com `commit`/`release`; modo teste (`autoPublish=false`, TikTok `SELF_ONLY`) e modo real; URLs públicas das mídias fornecidas pelo usuário. Não validado em execução.
 - O plano de agendamento aceita carrossel (`imagens`, aprovação amarrada às imagens e à ordem) e a declaração de conteúdo de IA (`conteudo_ia`).

@@ -5,22 +5,22 @@ NOW="2026-10-20T10:00:00-03:00"
 
 # _mq <dir> [expressão python que altera p] → plan.json com p1 (vídeo) e p2 (carrossel de 3 imagens), media-urls
 _mq() {
-  mkdir -p "$1"; printf 'video' > "$1/v.mp4"; printf 'a' > "$1/s1.png"; printf 'b' > "$1/s2.png"; printf 'c' > "$1/s3.png"
+  mkdir -p "$1"; printf 'video' > "$1/v.mp4"; printf 'a' > "$1/s1.jpg"; printf 'b' > "$1/s2.jpg"; printf 'c' > "$1/s3.jpg"
   python3 - "$1" "${2:-pass}" <<'PY'
 import json, os, sys
 d = sys.argv[1]
 perfis = [{"rede": "instagram", "conta": "clo.app"}, {"rede": "tiktok", "conta": "clo.app"}]
 p = {"posts": [
     {"id": "p1", "video": "v.mp4", "legenda": "Rotina organizada", "hashtags": ["#clo"], "perfis": perfis, "data_hora": "2026-10-21T12:00:00-03:00"},
-    {"id": "p2", "imagens": ["s1.png", "s2.png", "s3.png"], "legenda": "Sua rotina vive bagunçada?", "hashtags": ["#clo", "#rotina"], "perfis": perfis,
+    {"id": "p2", "imagens": ["s1.jpg", "s2.jpg", "s3.jpg"], "legenda": "Sua rotina vive bagunçada?", "hashtags": ["#clo", "#rotina"], "perfis": perfis,
      "data_hora": "2026-10-22T19:00:00-03:00", "conteudo_ia": False}]}
 exec(sys.argv[2])
 json.dump(p, open(os.path.join(d, "plan.json"), "w", encoding="utf-8"), ensure_ascii=False)
-json.dump({"v.mp4": "https://exemplo.com/v.mp4", "s1.png": "https://exemplo.com/1.png", "s2.png": "https://exemplo.com/2.png", "s3.png": "https://exemplo.com/3.png"},
+json.dump({"v.mp4": "https://exemplo.com/v.mp4", "s1.jpg": "https://exemplo.com/1.jpg", "s2.jpg": "https://exemplo.com/2.jpg", "s3.jpg": "https://exemplo.com/3.jpg"},
           open(os.path.join(d, "urls.json"), "w"))
 # media-urls por post (o payload recusa entradas de outro post)
 json.dump({"v.mp4": "https://exemplo.com/v.mp4"}, open(os.path.join(d, "urls-p1.json"), "w"))
-json.dump({k: v for k, v in {"s1.png": "https://exemplo.com/1.png", "s2.png": "https://exemplo.com/2.png", "s3.png": "https://exemplo.com/3.png"}.items()},
+json.dump({k: v for k, v in {"s1.jpg": "https://exemplo.com/1.jpg", "s2.jpg": "https://exemplo.com/2.jpg", "s3.jpg": "https://exemplo.com/3.jpg"}.items()},
           open(os.path.join(d, "urls-p2.json"), "w"))
 PY
 }
@@ -32,9 +32,9 @@ test_carousel_plan_validates_and_rejects_bad_media() {
   python3 "$ROOT/scripts/validate_schedule.py" "$d/plan.json" --now "$NOW" || _fail "plano com carrossel recusado"
   _mq "$d" "p['posts'][1]['video']='v.mp4'"
   out=$(python3 "$ROOT/scripts/validate_schedule.py" "$d/plan.json" --now "$NOW" 2>&1) && _fail "vídeo e imagens juntos aceitos"; assert_contains "$out" "OU" "um dos dois"
-  _mq "$d" "p['posts'][1]['imagens']=['s1.png']"
+  _mq "$d" "p['posts'][1]['imagens']=['s1.jpg']"
   assert_fails python3 "$ROOT/scripts/validate_schedule.py" "$d/plan.json" --now "$NOW"
-  _mq "$d" "p['posts'][1]['imagens']=['s1.png','nao.png']"
+  _mq "$d" "p['posts'][1]['imagens']=['s1.jpg','nao.jpg']"
   out=$(python3 "$ROOT/scripts/validate_schedule.py" "$d/plan.json" --now "$NOW" 2>&1) && _fail "imagem ausente aceita"; assert_contains "$out" "não encontrado" "imagem ausente"
   _mq "$d" "del p['posts'][1]['imagens']"
   assert_fails python3 "$ROOT/scripts/validate_schedule.py" "$d/plan.json" --now "$NOW"
@@ -46,10 +46,10 @@ test_carousel_approval_is_bound_to_images_and_order() {
   python3 "$ROOT/scripts/approval.py" verify "$d/plan.json" p2 "$d/ap" >/dev/null 2>&1 || _fail "verify deveria passar"
   python3 - "$d/plan.json" <<'PY'
 import json, sys
-p = json.load(open(sys.argv[1])); p["posts"][1]["imagens"] = ["s2.png", "s1.png", "s3.png"]; json.dump(p, open(sys.argv[1], "w"))
+p = json.load(open(sys.argv[1])); p["posts"][1]["imagens"] = ["s2.jpg", "s1.jpg", "s3.jpg"]; json.dump(p, open(sys.argv[1], "w"))
 PY
   assert_fails python3 "$ROOT/scripts/approval.py" verify "$d/plan.json" p2 "$d/ap"   # outra ordem = outra aprovação
-  _mq "$d"; printf 'trocada' > "$d/s3.png"
+  _mq "$d"; printf 'trocada' > "$d/s3.jpg"
   assert_fails python3 "$ROOT/scripts/approval.py" verify "$d/plan.json" p2 "$d/ap"   # imagem mudou
   rm -rf "$d"
 }
@@ -75,7 +75,7 @@ test_payload_refuses_bad_urls_and_ids() {
   local d out; d="$(mktemp -d)"; _mq "$d"
   out=$(_mp plano "$d/plan.json" p2 --urls "$d/urls-p1.json" --blog-id 123 2>&1) && _fail "URLs faltando aceitas"; assert_contains "$out" "faltam" "faltam URLs"
   out=$(_mp plano "$d/plan.json" p2 --urls "$d/urls.json" --blog-id 123 2>&1) && _fail "entrada de outro post aceita"; assert_contains "$out" "não são deste post" "extras"
-  printf '{"s1.png":"http://x/1.png","s2.png":"https://x/2.png","s3.png":"https://x/3.png"}' > "$d/u.json"
+  printf '{"s1.jpg":"http://x/1.jpg","s2.jpg":"https://x/2.jpg","s3.jpg":"https://x/3.jpg"}' > "$d/u.json"
   out=$(_mp plano "$d/plan.json" p2 --urls "$d/u.json" --blog-id 123 2>&1) && _fail "http aceito"; assert_contains "$out" "https" "só https"
   assert_fails _mp plano "$d/plan.json" p1 --urls "$d/urls-p1.json" --blog-id abc
   assert_fails _mp plano "$d/plan.json" p1 --urls "$d/urls-p1.json" --blog-id 123 --modo qualquer
@@ -107,7 +107,7 @@ test_schedule_metricool_dry_run_confirm_commit_and_release() {
   assert_contains "$out" "PAYLOAD PRONTO" "payload gerado"
   assert_eq "em_andamento" "$(python3 "$ROOT/scripts/schedule_log.py" status "$d/plan.json" p2 "$d/.schedule-log.json")" "reserva aberta, nada marcado como agendado"
   assert_file_exists "$(ls -d "$d"/.snapshots/p2-*)/metricool-payload.json"
-  assert_file_exists "$(ls -d "$d"/.snapshots/p2-*)/imagem-03.png"
+  assert_file_exists "$(ls -d "$d"/.snapshots/p2-*)/imagem-03.jpg"
   out=$(_sm "$d" p2 --confirm 2>&1) && _fail "segunda reserva aceita"
   python3 "$ROOT/scripts/schedule_log.py" commit "$d/plan.json" p2 "$d/.schedule-log.json" "https://planner.metricool.com/x" >/dev/null || _fail "commit falhou"
   assert_eq "agendado" "$(python3 "$ROOT/scripts/schedule_log.py" status "$d/plan.json" p2 "$d/.schedule-log.json")" "agendado após commit"
@@ -120,7 +120,7 @@ test_schedule_metricool_needs_approval_urls_and_releases_on_bad_payload() {
   assert_fails _sm "$d" p2 --confirm                                  # sem aprovação
   _ap "$d" p2
   assert_fails bash "$ROOT/scripts/schedule.sh" "$d/plan.json" p2 --approvals "$d/ap" --scheduler metricool --now "$NOW"   # sem --urls/--blog-id
-  printf '{"s1.png":"https://x/1.png"}' > "$d/urls-p2.json"
+  printf '{"s1.jpg":"https://x/1.jpg"}' > "$d/urls-p2.json"
   out=$(_sm "$d" p2 --confirm 2>&1) && _fail "payload incompleto aceito"; assert_contains "$out" "liberada" "reserva liberada"
   assert_eq "livre" "$(python3 "$ROOT/scripts/schedule_log.py" status "$d/plan.json" p2 "$d/.schedule-log.json")" "livre após falha do payload"
   rm -rf "$d"
@@ -167,5 +167,31 @@ json.dump(p, open(f, "w", encoding="utf-8"), ensure_ascii=False)
 PY
   out=$(python3 "$ROOT/scripts/validate_schedule.py" "$d/plan.json" --now "$NOW" 2>&1) && _fail "título com 91 unidades UTF-16 aceito"
   assert_contains "$out" "titulo_tiktok" "mensagem cita o campo"
+  rm -rf "$d"
+}
+
+test_carousel_images_must_be_jpeg_or_webp() {
+  local d out; d="$(mktemp -d)"; _mq "$d"
+  for ext in jpg jpeg webp; do
+    for i in 1 2 3; do mv "$d/s$i.jpg" "$d/s$i.$ext" 2>/dev/null || mv "$d/s$i."* "$d/s$i.$ext"; done
+    python3 - "$d" "$ext" <<'PY'
+import json, os, sys
+f = os.path.join(sys.argv[1], "plan.json"); p = json.load(open(f, encoding="utf-8"))
+p["posts"][1]["imagens"] = [f"s{i}.{sys.argv[2]}" for i in (1, 2, 3)]
+json.dump(p, open(f, "w", encoding="utf-8"))
+PY
+    python3 "$ROOT/scripts/validate_schedule.py" "$d/plan.json" --now "$NOW" >/dev/null 2>&1 || _fail ".$ext deveria ser aceito"
+  done
+  for i in 1 2 3; do mv "$d/s$i.webp" "$d/s$i.png"; done
+  python3 - "$d" <<'PY'
+import json, os, sys
+f = os.path.join(sys.argv[1], "plan.json"); p = json.load(open(f, encoding="utf-8"))
+p["posts"][1]["imagens"] = [f"s{i}.png" for i in (1, 2, 3)]
+json.dump(p, open(f, "w", encoding="utf-8"))
+PY
+  out=$(python3 "$ROOT/scripts/validate_schedule.py" "$d/plan.json" --now "$NOW" 2>&1) && _fail "PNG aceito no carrossel (o TikTok recusa)"
+  assert_contains "$out" "JPEG" "diz o formato aceito"
+  assert_contains "$out" "WebP" "diz o formato aceito"
+  assert_contains "$out" "PNG" "diz o que foi recusado"
   rm -rf "$d"
 }

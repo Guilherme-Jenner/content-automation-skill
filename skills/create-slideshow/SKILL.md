@@ -1,6 +1,6 @@
 ---
 name: create-slideshow
-description: Monta carrosséis nativos (Instagram) e slideshows em Modo Foto (TikTok): páginas PNG ordenadas, com vídeo opcional, a partir de fotos enviadas pelo usuário, com legenda em formato de roteiro (hook, problema, app, prova, CTA). Com as mesmas fotos faz várias versões, reordenando e variando hook e anúncio do app, com pesquisa e aprovação por variante. Use quando o usuário enviar fotos/imagens e pedir slideshow, carrossel ou vários vídeos a partir delas.
+description: Monta carrosséis nativos (Instagram) e slideshows em Modo Foto (TikTok): páginas JPEG ordenadas, com vídeo opcional, a partir de fotos enviadas pelo usuário, com legenda em formato de roteiro (hook, problema, app, prova, CTA). Com as mesmas fotos faz várias versões, reordenando e variando hook e anúncio do app, com pesquisa e aprovação por variante. Use quando o usuário enviar fotos/imagens e pedir slideshow, carrossel ou vários vídeos a partir delas.
 ---
 
 # Slideshow / carrossel a partir de fotos
@@ -12,7 +12,7 @@ O resultado é o **formato nativo das redes**: um conjunto de imagens numeradas 
 Converse em português do Brasil, uma pergunta por vez. Esta etapa **não gasta crédito** (tudo local, ffmpeg) e **não gera nem altera imagens**: só ordena as fotos do usuário e escreve o texto de cada slide. Nada é montado sem aprovação por variante.
 
 ## 0. Entrada
-Peça a **pasta com as fotos** (ou os caminhos) no disco, não upload no chat. Copie/aponte as fotos para dentro do **diretório de trabalho** (o plano só aceita caminhos relativos a ele, sem `..`). Formatos: `.jpg`, `.jpeg`, `.png`, `.webp`; mínimo 3 fotos. Confirme o ffmpeg com `bash "${CLAUDE_PLUGIN_ROOT}/scripts/check-deps.sh"`.
+Peça a **pasta com as fotos** (ou os caminhos) no disco, não upload no chat. Copie/aponte as fotos para dentro do **diretório de trabalho** (o plano só aceita caminhos relativos a ele, sem `..`). Formatos das fotos de entrada: `.jpg`, `.jpeg`, `.png`, `.webp`; mínimo 3 fotos. (As páginas geradas são sempre **JPEG**: o TikTok em Modo Foto só aceita **JPEG ou WebP** e recusa PNG.) Confirme o ffmpeg com `bash "${CLAUDE_PLUGIN_ROOT}/scripts/check-deps.sh"`.
 
 Abra e **olhe cada foto** (Read mostra a imagem) e escreva uma `descricao` curta do que ela mostra (tela do app, resultado, pessoa usando...). A ordem e o texto dependem disso; nunca invente o que a foto não mostra. Pergunte, se não estiver claro: o que o app faz, para quem, qual a ação final (CTA) e se há trilha (arquivo fornecido por ele; a licença é dele).
 
@@ -67,10 +67,10 @@ Pergunte onde vai postar: **TikTok / Reels** usa `9:16` (1080x1920, o padrão); 
 ```bash
 bash "${CLAUDE_PLUGIN_ROOT}/scripts/make-slideshow.sh" "<diretorio de trabalho>/slideshow-plan.json" "<diretorio de saida>" [--aspecto 9:16|4:5] [--formato carrossel|video|ambos]
 ```
-Para cada variante aprovada gera `carrossel-<id>/slide-01.png`, `slide-02.png`... (o texto do slide já está na imagem, na ordem de postagem). Com `--formato video` ou `ambos` gera também `slideshow-<id>.mp4` e `.srt` (cada foto na duração do slide, trilha opcional). Relata concluídas, puladas e falhas. Use `--only <id>` para uma só e `--force` para refazer. Mostre os caminhos e peça a avaliação; ajustes voltam ao passo 3.
+Para cada variante aprovada gera `carrossel-<id>/slide-01.jpg`, `slide-02.jpg`... (JPEG, nunca PNG) (o texto do slide já está na imagem, na ordem de postagem). Com `--formato video` ou `ambos` gera também `slideshow-<id>.mp4` e `.srt` (cada foto na duração do slide, trilha opcional). Relata concluídas, puladas e falhas. Use `--only <id>` para uma só e `--force` para refazer. Mostre os caminhos e peça a avaliação; ajustes voltam ao passo 3.
 
 ## 6. Publicação
-Siga a skill `schedule-post` (legenda do post, hashtags, horários, **aprovação por post**, e o agendamento pelo Metricool). No plano de agendamento, use `imagens` com as PNGs de `carrossel-<id>/` na ordem. Para postar à mão, o usuário sobe as PNGs na ordem `slide-01`, `slide-02`... no Instagram (carrossel) ou no TikTok (Modo Foto, onde escolhe a música no app). O pacote manual (`export_package.sh`) também aceita carrossel.
+Siga a skill `schedule-post` (legenda do post, hashtags, horários, **aprovação por post**, e o agendamento pelo Metricool). No plano de agendamento, use `imagens` com os JPEGs de `carrossel-<id>/` na ordem. Para postar à mão, o usuário sobe os JPEGs na ordem `slide-01`, `slide-02`... no Instagram (carrossel) ou no TikTok (Modo Foto, onde escolhe a música no app). O pacote manual (`export_package.sh`) também aceita carrossel.
 
 ## Regras
 - Nunca invente fonte ou dado; diga quando algo for hipótese.

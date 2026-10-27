@@ -6,13 +6,13 @@ NOW="2026-10-20T10:00:00-03:00"
 # _dv <dir> → sobe o servidor falso, cria plano (p1 vídeo, p2 carrossel de 3 imagens) e aprova p1 e p2; exporta variáveis do teste
 _dv() {
   local d="$1"; mkdir -p "$d"
-  printf 'video' > "$d/v.mp4"; printf 'a' > "$d/s1.png"; printf 'b' > "$d/s2.png"; printf 'c' > "$d/s3.png"
+  printf 'video' > "$d/v.mp4"; printf 'a' > "$d/s1.jpg"; printf 'b' > "$d/s2.jpg"; printf 'c' > "$d/s3.jpg"
   python3 - "$d/plan.json" <<'PY'
 import json, sys
 perfis = [{"rede": "instagram", "conta": "clo.app"}]
 json.dump({"posts": [
   {"id": "p1", "video": "v.mp4", "legenda": "a", "hashtags": [], "perfis": perfis, "data_hora": "2026-10-21T12:00:00-03:00"},
-  {"id": "p2", "imagens": ["s1.png", "s2.png", "s3.png"], "legenda": "b", "hashtags": [], "perfis": perfis, "data_hora": "2026-10-22T12:00:00-03:00"},
+  {"id": "p2", "imagens": ["s1.jpg", "s2.jpg", "s3.jpg"], "legenda": "b", "hashtags": [], "perfis": perfis, "data_hora": "2026-10-22T12:00:00-03:00"},
   {"id": "p3", "video": "v.mp4", "legenda": "c", "hashtags": [], "perfis": perfis, "data_hora": "2026-10-23T12:00:00-03:00"}]}, open(sys.argv[1], "w"))
 PY
   for p in p1 p2; do python3 "$ROOT/scripts/approval.py" approve "$d/plan.json" $p "$d/ap" --now "$NOW" >/dev/null 2>&1 || _fail "approve $p"; done
@@ -37,7 +37,7 @@ test_drive_uploads_only_approved_media_private_by_default() {
   assert_eq "3" "$(grep -c '"pasta"' "$d/req.log")" "pasta raiz + 1 pasta por post aprovado"
   ! grep -q '"perm"' "$d/req.log" || _fail "nada deveria ser compartilhado sem --compartilhar-link"
   assert_contains "$(cat "$d/urls-p2.json")" "drive.google.com/file/d/" "link de visualização"
-  assert_contains "$(grep '"nome"' "$d/req.log" | head -4 | tr '\n' ' ')" "01-s1.png" "imagens numeradas na ordem"
+  assert_contains "$(grep '"nome"' "$d/req.log" | head -4 | tr '\n' ' ')" "01-s1.jpg" "imagens numeradas na ordem"
   assert_contains "$(head -1 "$d/req.log")" "Bearer tok-teste" "usa o token"
   _dstop "$d"
 }
@@ -48,7 +48,7 @@ test_drive_reupload_does_not_duplicate_and_detects_changes() {
   local antes; antes=$(grep -c '"nome"' "$d/req.log")
   _dd "$d" enviar "$d/plan.json" --approvals "$d/ap" --posts p1,p2 >/dev/null 2>&1 || _fail "2º envio"
   assert_eq "$antes" "$(grep -c '"nome"' "$d/req.log")" "reenvio não duplica"
-  printf 'trocada' > "$d/s2.png"   # muda depois da aprovação: aprovação deixa de valer e nada é enviado
+  printf 'trocada' > "$d/s2.jpg"   # muda depois da aprovação: aprovação deixa de valer e nada é enviado
   assert_fails _dd "$d" enviar "$d/plan.json" --approvals "$d/ap" --posts p2
   assert_eq "$antes" "$(grep -c '"nome"' "$d/req.log")" "mídia alterada não é enviada"
   _dstop "$d"
