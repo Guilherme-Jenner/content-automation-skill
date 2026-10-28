@@ -2,6 +2,10 @@
 
 Cada versão em `.claude-plugin/plugin.json` precisa de uma seção aqui. Quem instalou só recebe a atualização quando o `version` muda.
 
+## 0.3.2
+- Estilo de legenda `tiktok` (opcional): fonte TikTok Sans SemiBold (licença OFL, em `fonts/` com a `OFL.txt`), texto branco com contorno preto, no terço superior, como o Modo Foto do TikTok.
+- `make-slideshow.sh --aspecto 3:4` (1080x1440, opcional): o TikTok mostra o Modo Foto numa caixa de cerca de 3:4 e corta o 9:16 pelo topo; em 3:4 a foto fica centralizada. 9:16 (padrão) e 4:5 continuam.
+
 ## 0.3.1
 - Imagens do carrossel/Modo Foto: **só JPEG ou WebP**. `make-slideshow.sh` agora gera `slide-NN.jpg` (antes PNG, que o TikTok recusa) e `validate_schedule.py` barra PNG e outros formatos com mensagem explícita.
 

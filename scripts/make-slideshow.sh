@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # Monta os carrosséis (e, opcionalmente, o vídeo) das variantes APROVADAS de um slideshow-plan.json.
-# Uso: make-slideshow.sh <slideshow-plan.json> <diretorio de saida> [--formato carrossel|video|ambos] [--aspecto 9:16|4:5] [--only <id>] [--force]
+# Uso: make-slideshow.sh <slideshow-plan.json> <diretorio de saida> [--formato carrossel|video|ambos] [--aspecto 9:16|3:4|4:5] [--only <id>] [--force]
 #   --formato carrossel (padrão): só as páginas JPEG (o TikTok recusa PNG), para postar como carrossel do Instagram / Modo Foto do TikTok
 #   --formato video: só o vídeo; ambos: os dois
-#   --aspecto 9:16 (padrão, 1080x1920: TikTok e Reels) ou 4:5 (1080x1350: carrossel do feed do Instagram)
+#   --aspecto 9:16 (padrão, 1080x1920: TikTok e Reels), 3:4 (1080x1440: o TikTok mostra o Modo Foto numa caixa de cerca de 3:4, então a foto fica centralizada em vez de cortada no topo) ou 4:5 (1080x1350: carrossel do feed do Instagram)
 # Por variante aprovada gera:
 #   carrossel-<id>/slide-NN.jpg   uma página por slide, já com o texto, na ordem de postagem
 #   slideshow-<id>.mp4 e .srt     (formato video/ambos) cada foto na duração do slide, legenda queimada, trilha opcional
@@ -18,7 +18,7 @@ while [ $# -gt 0 ]; do
   case "$1" in
     --force) force=1; shift ;;
     --formato) [ $# -ge 2 ] || die "--formato exige carrossel, video ou ambos"; formato="$2"; shift 2 ;;
-    --aspecto) [ $# -ge 2 ] || die "--aspecto exige 9:16 ou 4:5"; aspecto="$2"; shift 2 ;;
+    --aspecto) [ $# -ge 2 ] || die "--aspecto exige 9:16, 3:4 ou 4:5"; aspecto="$2"; shift 2 ;;
     --only) [ $# -ge 2 ] || die "--only exige o id de uma variante"; only="$2"; shift 2 ;;
     *) args+=("$1"); shift ;;
   esac
@@ -27,7 +27,7 @@ set -- ${args[@]+"${args[@]}"}
 [ $# -ge 2 ] || die "uso: make-slideshow.sh <slideshow-plan.json> <diretorio de saida> [--formato carrossel|video|ambos] [--aspecto 9:16|4:5] [--only <id>] [--force]"
 plan="$(abspath "$1")"; outdir="$(abspath "$2")"
 case "$formato" in carrossel|video|ambos) ;; *) die "formato inválido: $formato (use carrossel, video ou ambos)" ;; esac
-case "$aspecto" in 9:16) W=1080; H=1920 ;; 4:5) W=1080; H=1350 ;; *) die "aspecto inválido: $aspecto (use 9:16 ou 4:5)" ;; esac
+case "$aspecto" in 9:16) W=1080; H=1920 ;; 4:5) W=1080; H=1350 ;; 3:4) W=1080; H=1440 ;; *) die "aspecto inválido: $aspecto (use 9:16, 3:4 ou 4:5)" ;; esac
 
 need_cmd ffmpeg "brew install ffmpeg"
 need_cmd python3 "brew install python"

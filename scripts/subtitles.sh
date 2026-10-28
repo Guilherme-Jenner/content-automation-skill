@@ -12,7 +12,7 @@ while [ $# -gt 0 ]; do
   case "$1" in
     --force) force=1; shift ;;
     --srt-only) srt_only=1; shift ;;
-    --style) [ $# -ge 2 ] || die "--style exige um nome (padrao, destaque ou discreto)"; style_name="$2"; shift 2 ;;
+    --style) [ $# -ge 2 ] || die "--style exige um nome (padrao, destaque, discreto ou tiktok)"; style_name="$2"; shift 2 ;;
     *) args+=("$1"); shift ;;
   esac
 done
@@ -21,9 +21,10 @@ case "$style_name" in
   padrao) style="FontName=Arial,FontSize=14,PrimaryColour=&H00FFFFFF&,OutlineColour=&H00000000&,BorderStyle=1,Outline=2,Alignment=2,MarginV=60" ;;
   destaque) style="FontName=Arial,FontSize=18,Bold=1,PrimaryColour=&H0000FFFF&,OutlineColour=&H00000000&,BorderStyle=1,Outline=3,Alignment=2,MarginV=80" ;;
   discreto) style="FontName=Arial,FontSize=11,PrimaryColour=&H00FFFFFF&,OutlineColour=&H00000000&,BorderStyle=1,Outline=1,Alignment=2,MarginV=40" ;;
-  *) die "estilo de legenda desconhecido: $style_name (use padrao, destaque ou discreto)" ;;
+  tiktok) style="@tiktok" ;;   # fonte do TikTok (TikTok Sans SemiBold, OFL); calculado pela altura do vídeo mais abaixo
+  *) die "estilo de legenda desconhecido: $style_name (use padrao, destaque, discreto ou tiktok)" ;;
 esac
-[ $# -ge 3 ] || die "uso: subtitles.sh <video> <transcript.json> <saida.mp4> [--style padrao|destaque|discreto] [--srt-only] [--force]"
+[ $# -ge 3 ] || die "uso: subtitles.sh <video> <transcript.json> <saida.mp4> [--style padrao|destaque|discreto|tiktok] [--srt-only] [--force]"
 video="$(abspath "$1")"; transcript="$(abspath "$2")"; out="$(abspath "$3")"
 
 need_cmd ffmpeg "brew install ffmpeg"
@@ -32,6 +33,15 @@ need_cmd python3 "brew install python"
 [ -f "$transcript" ] || die "transcript não encontrado: $transcript"
 duration="$(probe_duration "$video")"
 
+fontsdir_arg=""
+if [ "$style_name" = tiktok ]; then
+  # TikTok Sans SemiBold, texto branco com contorno preto, centralizado no terço superior (como o texto do Modo Foto).
+  # O libass escala tudo pela altura do vídeo (referência 288): tamanho, contorno e margem saem nessa escala.
+  altura="$(ffprobe -v error -select_streams v:0 -show_entries stream=height -of csv=p=0 "$video" 2>/dev/null)" || altura=""
+  case "$altura" in ''|*[!0-9]*) altura=1920 ;; esac
+  style="$(python3 -c "import sys; h=int(sys.argv[1]); k=288/h; topo=0.27 if h/1080 > 1.5 else 0.17; print('FontName=TikTok Sans SemiBold,FontSize=%.2f,PrimaryColour=&H00FFFFFF&,OutlineColour=&H00000000&,BorderStyle=1,Outline=%.2f,Alignment=6,MarginV=%d' % (74*k, 6*k, round(h*topo*k)))" "$altura")"
+  fontsdir_arg=":fontsdir=fonts"
+fi
 srt="$(srt_path "$out")"
 if [ "$srt_only" -eq 1 ]; then refuse_existing "$srt" "$force"; else refuse_existing "$out" "$force"; fi
 
@@ -59,7 +69,10 @@ fi
 # O filtro `subtitles` exige escapes frágeis para caminhos; rodamos numa pasta
 # temporária com nome simples (sub.srt) para evitar problemas com espaços, ':' e aspas.
 # Todos os caminhos usados dentro dela são absolutos.
-(cd "$work" && ffmpeg -v error -y -i "$video" -vf "subtitles=burn.srt:force_style='${style}'" \
+if [ -n "$fontsdir_arg" ]; then
+  mkdir -p "$work/fonts" && cp "$here/../fonts/TikTokSans-SemiBold.ttf" "$work/fonts/" || die "fonte do TikTok não encontrada em fonts/"
+fi
+(cd "$work" && ffmpeg -v error -y -i "$video" -vf "subtitles=burn.srt${fontsdir_arg}:force_style='${style}'" \
   -c:v libx264 -pix_fmt yuv420p -c:a copy "$tmp") || die "falha ao queimar a legenda"
 mv -f "$tmp" "$out"
 cp "$work/sub.srt" "$srt"

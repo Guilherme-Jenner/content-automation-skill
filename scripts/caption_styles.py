@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Estilos de legenda: largura de quebra (caracteres por linha na tela) e limite de texto por legenda.
 
-Os valores foram calibrados para vídeo 1080x1920 com os estilos do subtitles.sh (padrao, destaque, discreto):
+Os valores foram calibrados para vídeo 1080x1920 com os estilos do subtitles.sh (padrao, destaque, discreto, tiktok):
 o libass quebra de novo qualquer linha que não caiba na largura, então a quebra do SRT precisa ser a da tela,
 senão uma legenda "de 3 linhas" ocupa 5 a 10 linhas e cobre o quadro. Máximo de 3 linhas por legenda.
 
@@ -18,7 +18,7 @@ import sys
 import textwrap
 
 MAX_LINHAS = 3
-LARGURAS = {"padrao": 17, "destaque": 13, "discreto": 21}
+LARGURAS = {"padrao": 17, "destaque": 13, "discreto": 21, "tiktok": 22}
 
 
 def largura(estilo):

@@ -38,7 +38,7 @@ Toda variante é uma sequência de 3 a 10 slides, uma foto por slide, sem repeti
 - **Hook fixo (opcional):** o usuário quer manter o mesmo hook e mudar só o resto (fotos, ordem, texto dos demais slides). Marque `"hook_fixo": true` no topo do plano: todas as variantes passam a ter o **mesmo `formato_hook` e o mesmo texto de hook**, sem `gancho_repetido` nem justificativa. A foto do hook pode mudar. As variantes ainda não podem ser idênticas entre si (mesma ordem de fotos e mesmos textos).
 Escolha a foto mais forte para o `hook` e a que mostra o app para o `app`.
 
-Texto de cada slide: curto, no máximo **3 linhas na tela** (cerca de 51 caracteres no estilo `padrao`, 39 no `destaque`, 63 no `discreto`; o script recusa o que não couber). Duração padrão 2,5 s por slide (`duracao_s`, de 1,5 a 6 s; máximo de 60 s no vídeo). Vídeo gerado só com fotos reais do usuário; se a foto tiver conteúdo de IA, lembre de declarar ao publicar.
+Texto de cada slide: curto, no máximo **3 linhas na tela** (cerca de 51 caracteres no estilo `padrao`, 39 no `destaque`, 63 no `discreto`, 66 no `tiktok`; o script recusa o que não couber). **Estilo `tiktok` (opcional):** usa a fonte do TikTok (TikTok Sans SemiBold, licença OFL, já inclusa em `fonts/`), texto branco com contorno preto e centralizado no terço superior, como o texto do Modo Foto; recomendado para posts no TikTok. Os outros estilos continuam em Arial na parte de baixo. Duração padrão 2,5 s por slide (`duracao_s`, de 1,5 a 6 s; máximo de 60 s no vídeo). Vídeo gerado só com fotos reais do usuário; se a foto tiver conteúdo de IA, lembre de declarar ao publicar.
 
 ## 3. Plano
 Escreva `slideshow-plan.json` no diretório de trabalho (formato em `${CLAUDE_PLUGIN_ROOT}/schemas/slideshow-plan.schema.json`; 1 a 5 variantes, `quantidade` igual ao número delas, `aprovada: false`):
@@ -63,9 +63,9 @@ python3 "${CLAUDE_PLUGIN_ROOT}/scripts/validate_slideshow.py" "<diretorio de tra
 Mostre cada variante em linguagem simples: hook (formato), ordem das fotos com o papel e o texto de cada slide, como o app é anunciado e a duração total. Só marque `"aprovada": true` na variante que o usuário confirmar de forma explícita ("aprovo"); cada uma é aprovada separadamente. Se pedir ajustes, edite o plano, valide e mostre de novo.
 
 ## 5. Monte
-Pergunte onde vai postar: **TikTok / Reels** usa `9:16` (1080x1920, o padrão); o **carrossel do feed do Instagram** costuma usar `4:5` (1080x1350).
+Pergunte onde vai postar e **deixe o usuário escolher o enquadramento** (opcional): `9:16` (1080x1920, o padrão: TikTok e Reels) ou `3:4` (1080x1440: o TikTok mostra o Modo Foto numa caixa de cerca de 3:4 e corta o 9:16 pelo topo, então a foto parece colada no alto; em 3:4 ela fica centralizada); o **carrossel do feed do Instagram** costuma usar `4:5` (1080x1350). As páginas saem sempre em JPEG.
 ```bash
-bash "${CLAUDE_PLUGIN_ROOT}/scripts/make-slideshow.sh" "<diretorio de trabalho>/slideshow-plan.json" "<diretorio de saida>" [--aspecto 9:16|4:5] [--formato carrossel|video|ambos]
+bash "${CLAUDE_PLUGIN_ROOT}/scripts/make-slideshow.sh" "<diretorio de trabalho>/slideshow-plan.json" "<diretorio de saida>" [--aspecto 9:16|3:4|4:5] [--formato carrossel|video|ambos]
 ```
 Para cada variante aprovada gera `carrossel-<id>/slide-01.jpg`, `slide-02.jpg`... (JPEG, nunca PNG) (o texto do slide já está na imagem, na ordem de postagem). Com `--formato video` ou `ambos` gera também `slideshow-<id>.mp4` e `.srt` (cada foto na duração do slide, trilha opcional). Relata concluídas, puladas e falhas. Use `--only <id>` para uma só e `--force` para refazer. Mostre os caminhos e peça a avaliação; ajustes voltam ao passo 3.
 
@@ -76,4 +76,4 @@ Siga a skill `schedule-post` (legenda do post, hashtags, horários, **aprovaçã
 - Nunca invente fonte ou dado; diga quando algo for hipótese.
 - As fotos originais nunca são modificadas; o texto vai por cima, em cópias.
 - Nada é montado, agendado ou publicado sem aprovação explícita do usuário.
-- Limite atual: no vídeo opcional, transições são cortes secos; o texto fica na parte de baixo (estilo de legenda); a orientação EXIF de fotos de celular não foi verificada (se uma foto sair deitada, gire-a antes).
+- Limite atual: no vídeo opcional, transições são cortes secos; o texto fica na parte de baixo nos estilos Arial (o estilo `tiktok` fica no terço superior); a orientação EXIF de fotos de celular não foi verificada (se uma foto sair deitada, gire-a antes).

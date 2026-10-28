@@ -139,3 +139,25 @@ test_make_slideshow_carousel_pages_are_jpeg_not_png() {
   [ -z "$(ls "$d"/out/carrossel-A/*.png 2>/dev/null)" ] || _fail "o carrossel não deve gerar PNG (o TikTok recusa)"
   rm -rf "$d"
 }
+
+test_make_slideshow_aspect_3x4_is_optional_next_to_9x16() {
+  local d; d="$(mktemp -d)"; _sp "$d" "p['variantes'][1]['aprovada']=False"
+  bash "$ROOT/scripts/make-slideshow.sh" "$d/p.json" "$d/o34" --aspecto 3:4 >/dev/null 2>&1 || _fail "3:4 falhou"
+  assert_eq "1080x1440" "$(ffprobe -v error -show_entries stream=width,height -of csv=s=x:p=0 "$d/o34/carrossel-A/slide-01.jpg")" "3:4"
+  bash "$ROOT/scripts/make-slideshow.sh" "$d/p.json" "$d/o916" --aspecto 9:16 >/dev/null 2>&1 || _fail "9:16 falhou"
+  assert_eq "1080x1920" "$(ffprobe -v error -show_entries stream=width,height -of csv=s=x:p=0 "$d/o916/carrossel-A/slide-01.jpg")" "9:16 continua"
+  local out; out=$(bash "$ROOT/scripts/make-slideshow.sh" "$d/p.json" "$d/ox" --aspecto 1:1 2>&1) && _fail "aspecto inválido aceito"
+  assert_contains "$out" "3:4" "a mensagem lista os aspectos permitidos"
+  rm -rf "$d"
+}
+
+test_tiktok_font_style_ships_with_the_plugin_and_renders() {
+  assert_file_exists "$ROOT/fonts/TikTokSans-SemiBold.ttf"
+  assert_file_exists "$ROOT/fonts/OFL.txt"
+  local d out; d="$(mktemp -d)"; _sp "$d" "p['estilo']='tiktok'; p['variantes'][1]['aprovada']=False"
+  _sv "$d/p.json" >/dev/null 2>&1 || _fail "estilo tiktok recusado pelo validador"
+  out=$(bash "$ROOT/scripts/make-slideshow.sh" "$d/p.json" "$d/o34" --aspecto 3:4 2>&1) || _fail "render com estilo tiktok falhou: $out"
+  assert_file_exists "$d/o34/carrossel-A/slide-01.jpg"
+  assert_contains "$(grep -n 'TikTok Sans SemiBold' "$ROOT/scripts/subtitles.sh")" "FontName" "o estilo usa a fonte do TikTok"
+  rm -rf "$d"
+}

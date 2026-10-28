@@ -1,6 +1,6 @@
 {
   "name": "clo-content-pipeline",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "Pipeline de conteúdo em vídeo da CLO: pesquisa, roteiro, geração e edição (ffmpeg, Whisper, Katana, Remotion) e agendamento com aprovação humana.",
   "author": { "name": "CLO" },
   "license": "MIT",

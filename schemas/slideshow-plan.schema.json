@@ -3,7 +3,7 @@
   "required": ["quantidade", "fotos", "variantes"],
   "properties": {
     "quantidade": {"type": "integer"},
-    "estilo": {"type": "string", "enum": ["padrao", "destaque", "discreto"]},
+    "estilo": {"type": "string", "enum": ["padrao", "destaque", "discreto", "tiktok"]},
     "hook_fixo": {"type": "boolean"},
     "fotos": {
       "type": "array", "minItems": 3,
